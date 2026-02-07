@@ -1,0 +1,33 @@
+# VENV
+venv/
+
+# CyberGuardian Daten
+.cyberguardian/
+~/.cyberguardian/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Logs
+*.log
+logs/
+
+# System
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Backup
+*.bak
+*~
