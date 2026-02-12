@@ -4,5 +4,5 @@ scapy>=2.5.0
 python-nmap>=0.7.1
 netifaces>=0.11.0
 requests>=2.31.0
-mac-vendor-lookup>=2.1.0
+mac-vendor-lookup>=0.1.15
 pyudev>=0.24.0

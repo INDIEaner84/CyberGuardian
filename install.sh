@@ -1,5 +1,4 @@
 #!/bin/bash
-"""CyberGuardian Pro - Automatisches Installations-Script"""
 
 set -e
 
@@ -40,7 +39,7 @@ pip install --quiet --upgrade pip 2>/dev/null || true
 if [ -f "requirements.txt" ]; then
     pip install --quiet -r requirements.txt
     echo -e "${GREEN}Python-Pakete installiert${NC}"
-else:
+else
     # Fallback: Einzelne Installation
     pip install --quiet customtkinter>=5.2.0
     pip install --quiet psutil>=5.9.0
@@ -48,7 +47,7 @@ else:
     pip install --quiet python-nmap>=0.7.1
     pip install --quiet netifaces>=0.11.0
     pip install --quiet requests>=2.31.0
-    pip install --quiet mac-vendor-lookup>=2.1.0
+    pip install --quiet mac-vendor-lookup>=0.1.15
     pip install --quiet pyudev>=0.24.0
 fi
 
