@@ -18,8 +18,29 @@ from pathlib import Path
 import queue
 import netifaces
 
+# Retro Terminal / Akira / IBM Green Theme
 ctk.set_appearance_mode("dark")
-ctk.set_default_color_theme("blue")
+ctk.set_default_color_theme("green")
+
+# Custom Colors - Retro Terminal Green
+COLORS = {
+    "bg_dark": "#0a0a0a",
+    "bg_medium": "#0d1b0d",
+    "bg_light": "#132413",
+    "fg_main": "#00ff41",
+    "fg_dim": "#00aa2a",
+    "fg_bright": "#33ff66",
+    "accent": "#00ff41",
+    "warning": "#ffaa00",
+    "error": "#ff3333",
+    "border": "#00aa2a",
+}
+
+# Custom Font
+FONT_TERM = ("Courier", 12)
+FONT_BOLD = ("Courier", 14, "bold")
+FONT_HEADER = ("Courier", 18, "bold")
+FONT_LARGE = ("Courier", 24, "bold")
 
 try:
     from core.network_scanner import NetworkScanner
@@ -86,45 +107,77 @@ class CyberGuardianApp(ctk.CTk):
         self.create_statusbar()
 
     def create_header(self):
-        header = ctk.CTkFrame(self.main_container, height=80)
+        header = ctk.CTkFrame(
+            self.main_container,
+            height=80,
+            fg_color=COLORS["bg_medium"],
+            border_color=COLORS["border"],
+            border_width=2,
+        )
         header.pack(fill="x", pady=(0, 10))
         header.pack_propagate(False)
 
+        # ASCII Art Header
+        header_text = "▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n  █ CYBERGUARDIAN PRO v2.0 █\n▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓"
+
         ctk.CTkLabel(
-            header, text="CyberGuardian Pro", font=ctk.CTkFont(size=28, weight="bold")
-        ).pack(side="left", padx=20, pady=20)
+            header,
+            text=header_text,
+            font=("Courier", 10),
+            text_color=COLORS["fg_main"],
+            fg_color=COLORS["bg_dark"],
+        ).pack(side="left", padx=20, pady=10)
 
         quick_frame = ctk.CTkFrame(header, fg_color="transparent")
         quick_frame.pack(side="right", padx=20)
 
         ctk.CTkButton(
             quick_frame,
-            text="PANIC",
-            fg_color="#dc3545",
-            width=100,
+            text="[ PANIC ]",
+            fg_color=COLORS["error"],
+            text_color=COLORS["bg_dark"],
+            font=FONT_BOLD,
+            width=120,
+            border_width=2,
+            border_color=COLORS["error"],
             command=self.panic_stop,
         ).pack(side="right", padx=5)
 
     def create_sidebar(self):
-        self.sidebar = ctk.CTkFrame(self.content_frame, width=250)
+        self.sidebar = ctk.CTkFrame(
+            self.content_frame,
+            width=250,
+            fg_color=COLORS["bg_dark"],
+            border_color=COLORS["border"],
+            border_width=2,
+        )
         self.sidebar.pack(side="left", fill="y", padx=(0, 10))
         self.sidebar.pack_propagate(False)
 
+        # Sidebar Header
+        ctk.CTkLabel(
+            self.sidebar,
+            text="[ MENU ]",
+            font=FONT_BOLD,
+            text_color=COLORS["fg_main"],
+            fg_color=COLORS["bg_medium"],
+        ).pack(pady=(15, 10), fill="x")
+
         nav_items = [
-            ("Dashboard", self.show_dashboard),
-            ("Netzwerk-Scan", self.show_network),
-            ("WLAN-Audit", self.show_wifi),
-            ("Port-Manager", self.show_ports),
-            ("Prozesse", self.show_processes),
-            ("WireGuard VPN", self.show_wireguard),
-            ("Anonymisierung", self.show_anonymizer),
-            ("Router-Tools", self.show_router),
-            ("IDS/IPS", self.show_ids),
-            ("Datei-Integritaet", self.show_integrity),
-            ("Forensik", self.show_forensics),
-            ("Rollback", self.show_rollback),
-            ("Logs", self.show_logs),
-            ("Einstellungen", self.show_settings),
+            ("[D] Dashboard", self.show_dashboard),
+            ("[N] Netzwerk-Scan", self.show_network),
+            ("[W] WLAN-Audit", self.show_wifi),
+            ("[P] Port-Manager", self.show_ports),
+            ("[S] Prozesse", self.show_processes),
+            ("[V] WireGuard VPN", self.show_wireguard),
+            ("[A] Anonymisierung", self.show_anonymizer),
+            ("[R] Router-Tools", self.show_router),
+            ("[I] IDS/IPS", self.show_ids),
+            ("[F] Datei-Integritaet", self.show_integrity),
+            ("[X] Forensik", self.show_forensics),
+            ("[B] Rollback", self.show_rollback),
+            ("[L] Logs", self.show_logs),
+            ("[C] Einstellungen", self.show_settings),
         ]
 
         self.nav_buttons = {}
@@ -134,36 +187,74 @@ class CyberGuardianApp(ctk.CTk):
                 text=text,
                 anchor="w",
                 command=command,
-                fg_color="transparent",
-                height=40,
+                fg_color=COLORS["bg_medium"],
+                text_color=COLORS["fg_dim"],
+                hover_color=COLORS["bg_light"],
+                border_width=1,
+                border_color=COLORS["border"],
+                font=FONT_TERM,
+                height=35,
             )
-            btn.pack(fill="x", padx=10, pady=2)
+            btn.pack(fill="x", padx=10, pady=3)
             self.nav_buttons[text] = btn
 
-        info_frame = ctk.CTkFrame(self.sidebar)
+        info_frame = ctk.CTkFrame(
+            self.sidebar,
+            fg_color=COLORS["bg_medium"],
+            border_color=COLORS["border"],
+            border_width=1,
+        )
         info_frame.pack(side="bottom", fill="x", padx=10, pady=10)
+
         ctk.CTkLabel(
-            info_frame, text="System Info", font=ctk.CTkFont(weight="bold")
+            info_frame,
+            text="[ SYSTEM ]",
+            font=FONT_TERM,
+            text_color=COLORS["fg_main"],
         ).pack(pady=5)
         ctk.CTkLabel(
             info_frame,
             text=self.get_system_info(),
             justify="left",
-            font=ctk.CTkFont(size=10),
+            font=("Courier", 9),
+            text_color=COLORS["fg_dim"],
         ).pack(pady=5)
 
     def create_main_area(self):
-        self.main_area = ctk.CTkFrame(self.content_frame)
+        self.main_area = ctk.CTkFrame(
+            self.content_frame,
+            fg_color=COLORS["bg_dark"],
+            border_color=COLORS["border"],
+            border_width=2,
+        )
         self.main_area.pack(side="right", fill="both", expand=True)
         self.show_dashboard()
 
     def create_statusbar(self):
-        self.statusbar = ctk.CTkFrame(self.main_container, height=30)
+        self.statusbar = ctk.CTkFrame(
+            self.main_container,
+            height=30,
+            fg_color=COLORS["bg_medium"],
+            border_color=COLORS["border"],
+            border_width=1,
+        )
         self.statusbar.pack(fill="x", pady=(10, 0))
-        self.status_label = ctk.CTkLabel(self.statusbar, text="Bereit", anchor="w")
+
+        self.status_label = ctk.CTkLabel(
+            self.statusbar,
+            text="> SYSTEM BEREIT",
+            anchor="w",
+            font=FONT_TERM,
+            text_color=COLORS["fg_main"],
+            fg_color=COLORS["bg_medium"],
+        )
         self.status_label.pack(side="left", padx=10)
+
         self.time_label = ctk.CTkLabel(
-            self.statusbar, text=datetime.now().strftime("%H:%M:%S")
+            self.statusbar,
+            text=datetime.now().strftime("%H:%M:%S"),
+            font=FONT_TERM,
+            text_color=COLORS["fg_dim"],
         )
         self.time_label.pack(side="right", padx=10)
         self.update_time()
