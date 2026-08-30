@@ -81,6 +81,47 @@
     return String(kind || 'event').replaceAll('.', ' ').toUpperCase();
   }
 
+  const tabGuides = {
+    command: {
+      symbol: '◈', kicker: 'YOU ARE HERE / STARTPUNKT', title: 'COMMAND DECK',
+      text: 'Hier liest du zuerst die Lage und entscheidest, welcher defensive Schritt als Nächstes gemeinsam verfolgt wird.',
+      next: 'PLAN ANLEGEN', output: 'wird an alle Agenten broadcastet', action: 'plan', actionLabel: 'PLAN STARTEN'
+    },
+    mesh: {
+      symbol: '✣', kicker: 'YOU ARE HERE / KOORDINATION', title: 'AGENT MESH',
+      text: 'Hier siehst du, wer welchen Kontext trägt. Jeder Plan bleibt sichtbar, bis er abgeschlossen oder bewusst blockiert ist.',
+      next: 'PLAN BROADCASTEN', output: 'gemeinsamer Status statt Einzelchat', action: 'plan', actionLabel: 'PLAN ANLEGEN'
+    },
+    lab: {
+      symbol: '⌁', kicker: 'YOU ARE HERE / DEFENSE LAB', title: 'HONEYPOT LAB',
+      text: 'Hier baust du virtuelle Decoys für sichere Übungen. Erst anlegen, dann aktivieren, dann ein synthetisches Signal testen.',
+      next: 'DECOY ERSTELLEN', output: 'kein Port · keine Antwort · kein Angriff', action: 'honeypot', actionLabel: 'DECOY ANLEGEN'
+    },
+    drift: {
+      symbol: '⟡', kicker: 'YOU ARE HERE / VISUAL READOUT', title: 'SIGNAL DRIFT',
+      text: 'Diese Ansicht zeigt Systemaktivität als Muster. Sie ist Orientierung, nicht die Detailanalyse eines Incidents.',
+      next: 'SIGNAL DETAILS', output: 'für Quelle und Taktik ins Honeypot Lab', action: 'lab', actionLabel: 'LAB ÖFFNEN'
+    },
+    about: {
+      symbol: '?', kicker: 'YOU ARE HERE / ORIENTATION', title: 'PROJECT BRIEF',
+      text: 'Hier erfährst du, warum CyberGuardian existiert, wie die Control Plane arbeitet und wo die Sicherheitsgrenzen liegen.',
+      next: 'ERSTEN SCHRITT', output: 'zurück zum Lagebild', action: 'command', actionLabel: 'COCKPIT ÖFFNEN'
+    }
+  };
+
+  function renderTabGuide(view) {
+    const guide = tabGuides[view] || tabGuides.command;
+    $('#tabGuideSymbol').textContent = guide.symbol;
+    $('#tabGuideKicker').textContent = guide.kicker;
+    $('#tabGuideTitle').textContent = guide.title;
+    $('#tabGuideText').textContent = guide.text;
+    $('#tabGuideNext').textContent = guide.next;
+    $('#tabGuideOutput').textContent = guide.output;
+    const action = $('#tabGuideAction');
+    action.textContent = `${guide.actionLabel} ↗`;
+    action.dataset.guideAction = guide.action;
+  }
+
   async function request(path, options = {}) {
     const response = await fetch(path, {
       headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
@@ -272,6 +313,7 @@
     $$('.view-panel').forEach((panel) => panel.classList.toggle('view-panel--active', panel.dataset.viewPanel === currentView));
     $$('.nav-item').forEach((button) => button.classList.toggle('nav-item--active', button.dataset.view === currentView));
     $('#viewCrumb').textContent = ({ command: 'COMMAND DECK', mesh: 'AGENT MESH', lab: 'HONEYPOT LAB', drift: 'SIGNAL DRIFT', about: 'PROJECT BRIEF' })[currentView];
+    renderTabGuide(currentView);
     if (currentView === 'drift') startDriftCanvas();
   }
 
@@ -394,6 +436,11 @@
     $$('[data-view-link]').forEach((button) => button.addEventListener('click', () => { enterCockpit(currentView); setView(button.dataset.viewLink); }));
     $$('.filter-tab').forEach((button) => button.addEventListener('click', () => { planFilter = button.dataset.planFilter; renderPlans(); }));
     $$('[data-open-modal]').forEach((button) => button.addEventListener('click', () => openModal(button.dataset.openModal)));
+    $('#tabGuideAction')?.addEventListener('click', () => {
+      const action = $('#tabGuideAction').dataset.guideAction;
+      if (['plan', 'honeypot', 'message', 'agent'].includes(action)) openModal(action);
+      else if (['command', 'mesh', 'lab', 'drift', 'about'].includes(action)) setView(action);
+    });
     $$('[data-close-modal]').forEach((button) => button.addEventListener('click', closeModal));
     $('#modalBackdrop')?.addEventListener('click', (event) => { if (event.target === $('#modalBackdrop')) closeModal(); });
     document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeModal(); });
