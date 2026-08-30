@@ -14,7 +14,7 @@ CyberGuardian ist eine lokale Security-Suite mit einem neuen Browser-Cockpit fü
 - **Agent-to-Agent-Handoffs:** Presence, Broadcast-Nachrichten und Kontextübergaben landen gemeinsam im lokalen Audit Trail.
 - **Defensives Honeypot-Lab:** virtuelle Decoys konfigurieren, aktivieren/deaktivieren, synthetische Testsignale einspeisen und zugehörige Incidents quittieren.
 - **Defense Ops:** ein begrenzter Packet Observatory im Stil einer Wireshark/tshark-Metadatenansicht, Proxychains-Installationscheck und MAC-Rotationsvorschau. Alles ist allowlisted, zeitlich begrenzt und erklärt die Grenze sichtbar.
-- **Tool Atlas:** alle bekannten Module — Network, Wireless, Ports, Prozesse, WireGuard, Proxy/Anonymizer, Router, IDS/IPS, Integrity, Forensics, Backups, Control Plane und Defense Ops — liegen auf einer Oberfläche. Jeder Run hat Erklärung, Safety Rail, Verfügbarkeit, Watch-Posture und Audit-Eintrag.
+- **Tool Atlas:** alle bekannten Module — Network, Wireless, Ports, Prozesse, WireGuard, Proxy/Anonymizer, Router, IDS/IPS, Integrity, Forensics, Backups, Logger, Config, Control Plane und Defense Ops — liegen auf einer Oberfläche. Jeder Run hat Erklärung, Safety Rail, Verfügbarkeit, Watch-Posture und Audit-Eintrag.
 - **Persistenz ohne Zusatzdienst:** atomare JSON-Schreibvorgänge nach `~/.cyberguardian/control_plane.json`; der Browser spricht ausschließlich mit der lokalen Control Plane.
 - **Dependency-free Web-Start:** Das Cockpit läuft mit Python-Standardbibliothek. Die ältere CustomTkinter-/Dear-PyGui-Oberfläche bleibt für lokale Desktop-Workflows erhalten.
 

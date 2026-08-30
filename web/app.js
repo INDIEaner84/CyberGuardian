@@ -452,7 +452,7 @@
 
   async function runTool(toolId, action) {
     if (offlineMode) { toast('Server nicht verbunden — kein Tool-Run ausgeführt.', 'error'); return; }
-    const button = document.querySelector(`[data-run-tool="${CSS.escape(toolId)}"]`);
+    const button = document.querySelector(`[data-run-tool="${toolId}"]`);
     if (button) { button.disabled = true; button.textContent = '↯ RUNNING …'; }
     try {
       const run = await request(`/api/tools/${encodeURIComponent(toolId)}/run`, { method: 'POST', body: JSON.stringify({ action }) });

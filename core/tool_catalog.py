@@ -132,6 +132,22 @@ class ToolCatalog:
                 "actions": [{"id": "backup_inventory", "label": "BACKUPS LISTEN", "description": "lokale Backups zählen"}],
             },
             {
+                "id": "action_logger", "name": "ACTION LOGGER", "module": "utils.logger",
+                "category": "coordination", "icon": "≋", "accent": "cyan",
+                "summary": "Jeden Tool-Run und jede Übergabe als Audit Trail festhalten.",
+                "explain": "Zeigt, dass Beobachtung und Entscheidung nachvollziehbar bleiben. Es werden keine privaten Payloads oder Geheimnisse in den Browser-Log geschrieben.",
+                "boundary": "AUDIT INDEX / LOCAL ONLY",
+                "actions": [{"id": "audit_inventory", "label": "AUDIT STATUS", "description": "lokalen Audit-Index prüfen"}],
+            },
+            {
+                "id": "config", "name": "CONFIG / SAFETY", "module": "utils.config",
+                "category": "coordination", "icon": "⚙", "accent": "orange",
+                "summary": "Safe-Mode, Simulation und lokale Betriebsgrenzen sichtbar machen.",
+                "explain": "Liest nur die nicht-geheimen Sicherheitsoptionen der Control Plane. Einstellungen werden nicht still aus dem Tool Atlas verändert.",
+                "boundary": "SAFE SETTINGS / READ ONLY",
+                "actions": [{"id": "safe_settings", "label": "SETTINGS LESEN", "description": "Safety-Konfiguration prüfen"}],
+            },
+            {
                 "id": "control_plane", "name": "CONTROL PLANE", "module": "core.control_plane",
                 "category": "coordination", "icon": "◈", "accent": "red",
                 "summary": "Single Source of Do, Audit Trail und Agent-Kontext.",
@@ -163,7 +179,7 @@ class ToolCatalog:
 
     def _tool_status(self, definition: Dict[str, Any]) -> Dict[str, Any]:
         tool_id = definition["id"]
-        if tool_id in {"network_scanner", "port_manager", "process_monitor", "forensics", "control_plane"}:
+        if tool_id in {"network_scanner", "port_manager", "process_monitor", "forensics", "action_logger", "config", "control_plane"}:
             availability, status = True, "ready"
         elif tool_id == "wifi_auditor":
             availability, status = bool(shutil.which("iw")), "ready" if shutil.which("iw") else "limited"
@@ -267,6 +283,14 @@ class ToolCatalog:
             backup_dir = Path.home() / ".cyberguardian" / "backups"
             files = sorted(item.name for item in backup_dir.iterdir() if item.is_file()) if backup_dir.exists() else []
             return {"mode": "read-only", "summary": f"{len(files)} lokale Backups gefunden.", "details": {"directory": str(backup_dir), "files": files[:40]}}
+        if tool_id == "action_logger" and action == "audit_inventory":
+            snapshot = self.control_plane.snapshot()
+            return {"mode": "audited", "summary": f"{len(snapshot.get('activity', []))} Activity-Einträge und {len(snapshot.get('tool_runs', []))} Tool-Runs im lokalen Trail.", "details": {"activity_entries": len(snapshot.get("activity", [])), "tool_runs": len(snapshot.get("tool_runs", [])), "retention": snapshot.get("settings", {}).get("retention", "local only")}}
+        if tool_id == "config" and action == "safe_settings":
+            snapshot = self.control_plane.snapshot()
+            settings = snapshot.get("settings", {})
+            safe_settings = {key: value for key, value in settings.items() if key in {"safe_mode", "simulation_mode", "network_actions", "retention"}}
+            return {"mode": "read-only", "summary": "Nicht-geheime Safety-Einstellungen gelesen.", "details": safe_settings}
         if tool_id == "control_plane" and action == "sync_check":
             snapshot = self.control_plane.snapshot()
             return {"mode": "audited", "summary": "Single Source of Do ist erreichbar und konsistent lesbar.", "details": {"updated_at": snapshot.get("updated_at"), "stats": snapshot.get("stats", {}), "schema": snapshot.get("schema")}}
