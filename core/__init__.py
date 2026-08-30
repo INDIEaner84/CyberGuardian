@@ -1,25 +1,36 @@
-"""CyberGuardian Pro - Core Modules"""
+"""CyberGuardian Pro - Core Modules.
 
-from .network_scanner import NetworkScanner
-from .wifi_auditor import WifiAuditor
-from .port_manager import PortManager
-from .process_monitor import ProcessMonitor
-from .wireguard_manager import WireGuardManager
-from .anonymizer import Anonymizer
-from .router_tools import RouterTools
-from .intrusion_detection import IntrusionDetection
-from .file_integrity import FileIntegrityMonitor
-from .forensics import ForensicsTools
+The browser control plane is dependency-free and must be able to start on a
+fresh machine.  Optional desktop/security modules are therefore imported
+lazily instead of at package import time.
+"""
 
-__all__ = [
-    'NetworkScanner',
-    'WifiAuditor', 
-    'PortManager',
-    'ProcessMonitor',
-    'WireGuardManager',
-    'Anonymizer',
-    'RouterTools',
-    'IntrusionDetection',
-    'FileIntegrityMonitor',
-    'ForensicsTools',
-]
+from importlib import import_module
+
+
+_MODULES = {
+    "NetworkScanner": ".network_scanner",
+    "WifiAuditor": ".wifi_auditor",
+    "PortManager": ".port_manager",
+    "ProcessMonitor": ".process_monitor",
+    "WireGuardManager": ".wireguard_manager",
+    "Anonymizer": ".anonymizer",
+    "RouterTools": ".router_tools",
+    "IntrusionDetection": ".intrusion_detection",
+    "FileIntegrityMonitor": ".file_integrity",
+    "ForensicsTools": ".forensics",
+}
+
+__all__ = list(_MODULES)
+
+
+def __getattr__(name):
+    """Load a legacy desktop module only when a caller actually requests it."""
+
+    module_name = _MODULES.get(name)
+    if not module_name:
+        raise AttributeError(name)
+    module = import_module(module_name, __name__)
+    value = getattr(module, name)
+    globals()[name] = value
+    return value

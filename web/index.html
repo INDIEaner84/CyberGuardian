@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#08090f">
+  <meta name="description" content="CyberGuardian — defensives Agenten-Leitpult und simulation-only Honeypot-Labor.">
+  <title>CYBERGUARDIAN // CONTROL PLANE</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="ambient ambient-grid" aria-hidden="true"></div>
+  <div class="ambient ambient-scanlines" aria-hidden="true"></div>
+  <div class="ambient ambient-noise" aria-hidden="true"></div>
+  <canvas id="signalCanvas" class="signal-canvas" aria-hidden="true"></canvas>
+
+  <main id="startScreen" class="start-screen">
+    <header class="landing-topline">
+      <a class="brand-lockup" href="#top" aria-label="CyberGuardian Startseite">
+        <span class="brand-mark"><i></i><i></i><i></i></span>
+        <span>
+          <strong>CYBERGUARDIAN</strong>
+          <small>CONTROL PLANE / SOT-01</small>
+        </span>
+      </a>
+      <div class="landing-status">
+        <span class="status-dot status-dot--green"></span>
+        <span>DEFENSE MODE</span>
+        <span class="divider"></span>
+        <span class="mono">LOCAL ONLY</span>
+      </div>
+    </header>
+
+    <section class="landing-hero" id="top">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="eyebrow-line"></span>NEO-TOKYO SIGNAL DESK / 08:41:16 UTC</p>
+        <h1>ONE <span>TRUTH.</span><br><em>MANY GUARDIANS.</em></h1>
+        <p class="hero-lede">Ein gemeinsamer Kontrollkern für Agenten, Pläne und defensive Signale. Jeder sieht, was als Nächstes passiert — nichts verschwindet zwischen den Kanälen.</p>
+        <div class="hero-actions">
+          <button class="button button--primary button--large" data-enter="command">
+            <span class="button-icon">↳</span> COCKPIT ÖFFNEN
+          </button>
+          <button class="text-button" data-scroll-prototypes>
+            PROTOTYPEN ANSEHEN <span>↓</span>
+          </button>
+        </div>
+        <div class="hero-safety">
+          <span class="safety-shield">✦</span>
+          <span><strong>SAFE BY DESIGN</strong> · Honeypots im Browser sind virtuelle Simulationen. Keine echten Listener, keine Gegenangriffe.</span>
+        </div>
+      </div>
+
+      <div class="hero-visual" aria-label="Animierte CyberGuardian Signalvisualisierung">
+        <div class="sun-halo"></div>
+        <div class="sun-core"><span>守</span></div>
+        <div class="orbit orbit--one"><i></i></div>
+        <div class="orbit orbit--two"><i></i></div>
+        <div class="orbit orbit--three"><i></i></div>
+        <div class="visual-readout visual-readout--top"><span>SYNC</span><strong>100.0%</strong></div>
+        <div class="visual-readout visual-readout--bottom"><span>AGENT MESH</span><strong>04 ONLINE</strong></div>
+        <div class="visual-bracket bracket--left">[</div>
+        <div class="visual-bracket bracket--right">]</div>
+      </div>
+    </section>
+
+    <section class="prototype-section" id="prototypes">
+      <div class="section-intro">
+        <div>
+          <p class="eyebrow"><span class="eyebrow-line"></span>START MENU / SELECT A PROTOTYPE</p>
+          <h2>WIE SOLL SICH<br><span>DEIN LEITSTAND</span> ANFÜHLEN?</h2>
+        </div>
+        <p>Vier Interaktionsprototypen. Ein gemeinsamer Datenkern. Wähle einen Einstieg — du kannst jederzeit im Cockpit wechseln.</p>
+      </div>
+
+      <div class="prototype-grid">
+        <button class="prototype-card prototype-card--active" data-enter="command">
+          <span class="prototype-index">01 / CORE</span>
+          <span class="prototype-glyph glyph-core">◈</span>
+          <span class="prototype-card-title">COMMAND DECK</span>
+          <span class="prototype-card-copy">Der komplette Lageüberblick: Pläne, Agenten, Signale und Prioritäten auf einer Fläche.</span>
+          <span class="prototype-card-footer"><b>RECOMMENDED</b><i>↗</i></span>
+        </button>
+        <button class="prototype-card" data-enter="mesh">
+          <span class="prototype-index">02 / MESH</span>
+          <span class="prototype-glyph glyph-mesh">✣</span>
+          <span class="prototype-card-title">AGENT CONSTELLATION</span>
+          <span class="prototype-card-copy">Die Single Source of Do: Vorhaben werden gebroadcastet, übernommen und für alle sichtbar weitergeführt.</span>
+          <span class="prototype-card-footer"><b>COORDINATE</b><i>↗</i></span>
+        </button>
+        <button class="prototype-card" data-enter="lab">
+          <span class="prototype-index">03 / LAB</span>
+          <span class="prototype-glyph glyph-lab">⌁</span>
+          <span class="prototype-card-title">HONEYPOT LAB</span>
+          <span class="prototype-card-copy">Virtuelle Decoys anlegen, sichere Testsignale einspeisen und Logs als Beweiskette lesen.</span>
+          <span class="prototype-card-footer"><b>DEFENSE ONLY</b><i>↗</i></span>
+        </button>
+        <button class="prototype-card" data-enter="drift">
+          <span class="prototype-index">04 / DRIFT</span>
+          <span class="prototype-glyph glyph-drift">⟡</span>
+          <span class="prototype-card-title">SIGNAL DRIFT</span>
+          <span class="prototype-card-copy">Die visuelle Akira-inspirierte Nachtansicht für Live-Aktivität, Muster und die Temperatur des Systems.</span>
+          <span class="prototype-card-footer"><b>IMMERSIVE</b><i>↗</i></span>
+        </button>
+      </div>
+    </section>
+
+    <footer class="landing-footer">
+      <span>CYBERGUARDIAN PROTOTYPE / v0.3.0</span>
+      <span>BUILT FOR DEFENSE · <a href="#about" data-enter="about">READ THE BRIEF</a></span>
+      <span class="mono">SOT: ONLINE</span>
+    </footer>
+  </main>
+
+  <div id="appView" class="app-view is-hidden">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button id="backToStart" class="icon-button" title="Startmenü öffnen" aria-label="Startmenü öffnen">←</button>
+        <div class="brand-lockup brand-lockup--compact">
+          <span class="brand-mark"><i></i><i></i><i></i></span>
+          <span><strong>CYBERGUARDIAN</strong><small>SOT / MISSION CONTROL</small></span>
+        </div>
+        <span class="topbar-slash">/</span>
+        <span id="viewCrumb" class="topbar-crumb">COMMAND DECK</span>
+      </div>
+      <div class="topbar-right">
+        <div class="sync-chip"><span class="status-dot status-dot--green"></span><span>PLANE SYNC</span><b id="syncState">LIVE</b></div>
+        <div class="clock"><span id="clockTime">00:00:00</span><small>UTC</small></div>
+        <button id="motionToggle" class="icon-button icon-button--quiet" title="Animationen reduzieren" aria-label="Animationen reduzieren">◌</button>
+      </div>
+    </header>
+
+    <div class="app-body">
+      <aside class="sidebar">
+        <div class="sidebar-top">
+          <p class="side-label">OPERATIONS / 04</p>
+          <nav class="main-nav" aria-label="Hauptnavigation">
+            <button class="nav-item nav-item--active" data-view="command"><span class="nav-number">01</span><span class="nav-symbol">◈</span><span>COMMAND DECK</span><b>↗</b></button>
+            <button class="nav-item" data-view="mesh"><span class="nav-number">02</span><span class="nav-symbol">✣</span><span>AGENT MESH</span><b>↗</b></button>
+            <button class="nav-item" data-view="lab"><span class="nav-number">03</span><span class="nav-symbol">⌁</span><span>HONEYPOT LAB</span><b>↗</b></button>
+            <button class="nav-item" data-view="drift"><span class="nav-number">04</span><span class="nav-symbol">⟡</span><span>SIGNAL DRIFT</span><b>↗</b></button>
+            <button class="nav-item" data-view="about"><span class="nav-number">05</span><span class="nav-symbol">?</span><span>PROJECT BRIEF</span><b>↗</b></button>
+          </nav>
+        </div>
+        <div class="sidebar-bottom">
+          <div class="safe-card">
+            <div class="safe-card-top"><span class="status-dot status-dot--green"></span><span>SAFETY RAIL</span><strong>ON</strong></div>
+            <p>Simulation-only mode aktiv. Browser-Aktionen schreiben nur in die lokale Control Plane.</p>
+            <div class="safe-meter"><i style="width: 100%"></i></div>
+            <span class="safe-card-foot">NO ATTACK PATHS EXPOSED</span>
+          </div>
+          <div class="sidebar-footline"><span>NODE 7F-A</span><span>v0.3.0</span></div>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <div id="toastStack" class="toast-stack" aria-live="polite"></div>
+
+        <section class="view-panel view-panel--active" data-view-panel="command">
+          <div class="view-heading">
+            <div>
+              <p class="eyebrow"><span class="eyebrow-line"></span>LIVE COMMAND DECK / SHARED CONTEXT</p>
+              <h1>MISSION <span>CONTROL</span></h1>
+              <p class="heading-copy">Ein Lagebild. Ein nächster Schritt. Alle Agenten informiert.</p>
+            </div>
+            <div class="heading-actions">
+              <button class="button button--ghost" data-open-modal="message"><span>✦</span> BROADCAST</button>
+              <button class="button button--primary" data-open-modal="plan"><span>＋</span> PLAN ANLEGEN</button>
+            </div>
+          </div>
+
+          <div class="hero-status-card">
+            <div class="status-card-glow"></div>
+            <div class="status-card-copy">
+              <p class="eyebrow eyebrow--small">CONTROL PLANE HEALTH / SOT-01</p>
+              <h2>ALLE SYSTEME <span>BEOBACHTEN.</span></h2>
+              <p>Der gemeinsame Kontext ist synchronisiert. Neue Vorhaben werden automatisch an den Agent Mesh verteilt.</p>
+              <div class="status-card-tags"><span class="tag tag--green">● SAFE MODE</span><span class="tag">LOCAL STORAGE</span><span class="tag">NO ACTIVE RESPONSE</span></div>
+            </div>
+            <div class="health-ring" aria-label="Control Plane Gesundheit 96 Prozent"><div><strong>96</strong><span>%</span><small>HEALTH</small></div></div>
+            <div class="status-card-scan"><span>LAST CONSENSUS</span><b id="lastSync">--:--:--</b><i></i></div>
+          </div>
+
+          <div id="commandMetrics" class="metric-grid" aria-label="Systemmetriken"></div>
+
+          <div class="dashboard-grid dashboard-grid--main">
+            <section class="panel plan-panel">
+              <div class="panel-heading"><div><p class="panel-kicker">SINGLE SOURCE OF DO</p><h2>MISSION STREAM</h2></div><button class="panel-link" data-view-link="mesh">FULL BOARD ↗</button></div>
+              <div class="filter-row"><div class="filter-tabs"><button class="filter-tab filter-tab--active" data-plan-filter="all">ALL <span id="planCountAll">0</span></button><button class="filter-tab" data-plan-filter="active">ACTIVE <span id="planCountActive">0</span></button><button class="filter-tab" data-plan-filter="queued">QUEUED <span id="planCountQueued">0</span></button></div><span class="live-label"><i></i>LIVE</span></div>
+              <div id="planList" class="plan-list"></div>
+            </section>
+
+            <section class="panel agent-panel">
+              <div class="panel-heading"><div><p class="panel-kicker">CONTEXT CARRIERS</p><h2>AGENT MESH</h2></div><button class="panel-link" data-view-link="mesh">VIEW ALL ↗</button></div>
+              <div id="agentList" class="agent-list"></div>
+              <div class="mesh-footer"><span><i class="signal-wave"></i> BROADCAST BUS</span><strong id="messageCount">0 MESSAGES</strong></div>
+            </section>
+          </div>
+
+          <div class="dashboard-grid dashboard-grid--lower">
+            <section class="panel honeypot-panel">
+              <div class="panel-heading"><div><p class="panel-kicker">DEFENSIVE DECEPTION / SIMULATION</p><h2>HONEYPOT ARRAY</h2></div><button class="panel-link panel-link--accent" data-view-link="lab">OPEN LAB ↗</button></div>
+              <div id="honeypotRail" class="honeypot-rail"></div>
+            </section>
+            <section class="panel activity-panel">
+              <div class="panel-heading"><div><p class="panel-kicker">AUDIT TRAIL / LOCAL</p><h2>ACTIVITY RIVER</h2></div><span class="panel-code">ENCRYPTED // JSON</span></div>
+              <div id="activityList" class="activity-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view-panel" data-view-panel="mesh">
+          <div class="view-heading view-heading--compact">
+            <div><p class="eyebrow"><span class="eyebrow-line"></span>AGENT CONSTELLATION / BROADCAST BUS</p><h1>THE <span>MESH</span></h1><p class="heading-copy">Vorhaben werden einmal geschrieben und von allen defensiven Agenten gelesen.</p></div>
+            <div class="heading-actions"><button class="button button--ghost" data-open-modal="message">✦ BROADCAST</button><button class="button button--primary" data-open-modal="agent">＋ AGENT REGISTRIEREN</button></div>
+          </div>
+          <div class="mesh-layout">
+            <section class="panel mesh-map-panel"><div class="panel-heading"><div><p class="panel-kicker">SHARED INTENT GRAPH / LIVE</p><h2>CONSTELLATION</h2></div><span class="tag tag--green">4 NODES ONLINE</span></div><div id="meshMap" class="mesh-map"></div><div class="map-legend"><span><i class="legend-dot legend-dot--cyan"></i>ONLINE</span><span><i class="legend-dot legend-dot--orange"></i>ACTIVE FOCUS</span><span><i class="legend-line"></i>SHARED CONTEXT</span></div></section>
+            <section class="panel message-panel"><div class="panel-heading"><div><p class="panel-kicker">AGENT-TO-AGENT</p><h2>HANDOFFS</h2></div><span class="panel-code" id="meshMessageCount">0</span></div><div id="messageList" class="message-list"></div></section>
+          </div>
+          <section class="panel board-panel"><div class="panel-heading"><div><p class="panel-kicker">ONE QUEUE / NO LOST INTENT</p><h2>SHARED PLAN BOARD</h2></div><div class="board-legend"><span class="tag tag--high">HIGH</span><span class="tag">NORMAL</span><span class="tag tag--done">DONE</span></div></div><div id="meshPlanBoard" class="plan-board"></div></section>
+        </section>
+
+        <section class="view-panel" data-view-panel="lab">
+          <div class="view-heading view-heading--compact">
+            <div><p class="eyebrow"><span class="eyebrow-line"></span>DEFENSIVE DECEPTION / VIRTUAL LAB</p><h1>HONEYPOT <span>LAB</span></h1><p class="heading-copy">Decoys konfigurieren, Signale beobachten, nichts zurücksenden.</p></div>
+            <div class="heading-actions"><span class="lab-safety-badge"><span class="status-dot status-dot--green"></span>SIMULATION ONLY</span><button class="button button--primary" data-open-modal="honeypot">＋ HONEYPOT ERSTELLEN</button></div>
+          </div>
+          <div class="lab-callout"><span class="callout-icon">✦</span><div><strong>DEFENSIVE BOUNDARY</strong><p>Ein Eintrag ist ein virtuelles Testobjekt in der lokalen Control Plane. CyberGuardian öffnet hier keinen Port, antwortet keinem Angreifer und führt keine Payload aus.</p></div><span class="callout-code">RULE / 001</span></div>
+          <div id="labPotGrid" class="honeypot-grid"></div>
+          <section class="panel signal-log-panel"><div class="panel-heading"><div><p class="panel-kicker">CAPTURED TELEMETRY / SYNTHETIC</p><h2>SIGNAL LOG</h2></div><div class="log-actions"><span class="panel-code" id="signalLogCount">0 EVENTS</span><button class="button button--tiny button--ghost" id="simulateRandomSignal">＋ TESTSIGNAL EINSPEISEN</button></div></div><div id="signalTable" class="signal-table"></div></section>
+        </section>
+
+        <section class="view-panel" data-view-panel="drift">
+          <div class="view-heading view-heading--compact"><div><p class="eyebrow"><span class="eyebrow-line"></span>AKIRA-INSPIRED NIGHT VIEW / VISUAL PROTOTYPE</p><h1>SIGNAL <span>DRIFT</span></h1><p class="heading-copy">Die Temperatur des Systems — als bewegtes Muster statt als Tabellenzeile.</p></div><div class="heading-actions"><button class="button button--ghost" id="driftPulse">↯ PULSE SIGNAL</button><button class="button button--primary" data-view-link="command">← ZUR LEITSTELLE</button></div></div>
+          <div class="drift-stage panel"><canvas id="driftCanvas"></canvas><div class="drift-overlay"><div class="drift-readout"><span>DEFENSIVE SIGNAL TEMPERATURE</span><strong id="driftSignalCount">000</strong><small>CAPTURED EVENTS / SYNTHETIC</small></div><div class="drift-readout drift-readout--right"><span>THREAT POSTURE</span><strong>OBSERVE</strong><small>NO ACTIVE RESPONSE PATH</small></div></div><div class="drift-scan-copy">NEO-TOKYO / WATCHTOWER 07<br><span>THE CITY NEVER SLEEPS. THE GUARDIAN DOESN'T STRIKE.</span></div></div>
+          <div class="drift-cards"><div class="panel mini-readout"><span class="panel-kicker">OPEN INCIDENTS</span><strong id="driftIncidentCount">00</strong><span>awaiting acknowledgement</span></div><div class="panel mini-readout"><span class="panel-kicker">MESH SIGNAL</span><strong id="driftMeshCount">00%</strong><span>shared context health</span></div><div class="panel mini-readout"><span class="panel-kicker">DECOYS ACTIVE</span><strong id="driftHoneypotCount">00</strong><span>virtual observation nodes</span></div></div>
+        </section>
+
+        <section class="view-panel" data-view-panel="about">
+          <div class="view-heading view-heading--compact"><div><p class="eyebrow"><span class="eyebrow-line"></span>PROJECT BRIEF / WHY THIS EXISTS</p><h1>WHAT IS <span>CYBERGUARDIAN?</span></h1><p class="heading-copy">Ein lokales, defensives Cockpit für Menschen und Agenten, die gemeinsam sicher handeln wollen.</p></div><div class="heading-actions"><button class="button button--primary" data-view-link="command">← COCKPIT ÖFFNEN</button></div></div>
+          <div class="about-grid"><section class="panel about-hero"><span class="about-quote">“</span><h2>Single source of <span>do.</span></h2><p>CyberGuardian verbindet vorhandene Sicherheitsmodule mit einem gemeinsamen, nachvollziehbaren Kontrollkern. Statt dass Agenten in getrennten Chats aneinander vorbeiplanen, wird ein Vorhaben einmal angelegt, verteilt und mit Status, Besitzer und Audit Trail weitergeführt.</p><div class="about-stats"><div><strong>01</strong><span>SHARED TRUTH</span></div><div><strong>04</strong><span>AGENT ROLES</span></div><div><strong>00</strong><span>ATTACK PATHS</span></div></div></section><section class="panel about-list"><div class="panel-heading"><div><p class="panel-kicker">DESIGN PRINCIPLES</p><h2>LEITPLANKEN</h2></div></div><ol><li><span>01</span><div><strong>Beobachten vor handeln</strong><p>Signale werden gesammelt und korreliert. Keine automatischen Gegenangriffe.</p></div></li><li><span>02</span><div><strong>Jeder Agent sieht den Kontext</strong><p>Pläne, Übergaben und Entscheidungen liegen an einer Stelle.</p></div></li><li><span>03</span><div><strong>Simulation klar markieren</strong><p>Demo-Telemetrie bleibt synthetisch, lokal und in der Oberfläche sichtbar.</p></div></li><li><span>04</span><div><strong>Nur eigene Systeme</strong><p>Produktive Scans und Systemaktionen gehören in einen autorisierten, getrennten Workflow.</p></div></li></ol></section></div>
+          <section class="panel architecture-panel"><div class="panel-heading"><div><p class="panel-kicker">UNDER THE HOOD</p><h2>CONTROL PLANE ARCHITECTURE</h2></div><span class="tag tag--green">LOCAL JSON / ATOMIC WRITES</span></div><div class="architecture-flow"><div><b>AGENTS</b><span>ORBIT · KAI · MIKA</span></div><i>→</i><div class="architecture-core"><b>SOT / DO</b><span>control_plane.json</span></div><i>→</i><div><b>DEFENSE UI</b><span>plans · decoys · logs</span></div></div></section>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div id="modalBackdrop" class="modal-backdrop is-hidden">
+    <section id="planModal" class="modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="planModalTitle">
+      <div class="modal-top"><p class="eyebrow eyebrow--small">SINGLE SOURCE OF DO / NEW INTENT</p><button class="modal-close" data-close-modal aria-label="Schließen">×</button></div><h2 id="planModalTitle">NEUEN PLAN <span>BROADCASTEN</span></h2><p class="modal-copy">Ein Vorhaben für den gesamten Agent Mesh. Es wird als queued angelegt und ist sofort für alle sichtbar.</p><form id="planForm"><label>PLAN NAME<input name="title" required maxlength="90" placeholder="z. B. Evidence Relay" autocomplete="off"></label><label>OBJECTIVE<textarea name="objective" required maxlength="240" placeholder="Was soll defensiv beobachtet, dokumentiert oder korreliert werden?"></textarea></label><div class="form-row"><label>OWNER<select name="owner"><option>ORBIT</option><option>SENTINEL</option><option>KAI</option><option>MIKA</option></select></label><label>PRIORITY<select name="priority"><option value="normal">NORMAL</option><option value="high">HIGH</option><option value="critical">CRITICAL</option><option value="low">LOW</option></select></label></div><div class="modal-actions"><button type="button" class="button button--ghost" data-close-modal>ABBRECHEN</button><button type="submit" class="button button--primary">✦ AN MESH SENDEN</button></div></form>
+    </section>
+    <section id="honeypotModal" class="modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="honeypotModalTitle"><div class="modal-top"><p class="eyebrow eyebrow--small">VIRTUAL DECEPTION / SAFE LAB</p><button class="modal-close" data-close-modal aria-label="Schließen">×</button></div><h2 id="honeypotModalTitle">DECOY <span>INITIALISIEREN</span></h2><p class="modal-copy">Konfiguriert nur einen lokalen Simulationsdatensatz. Es wird kein Port geöffnet.</p><form id="honeypotForm"><label>DECOY NAME<input name="name" required maxlength="40" placeholder="z. B. KASA-API" autocomplete="off"></label><div class="form-row"><label>SERVICE<select name="service"><option>SSH decoy</option><option>HTTP decoy</option><option>Database decoy</option><option>Telemetry decoy</option></select></label><label>VIRTUAL PORT<input name="port" type="number" min="1" max="65535" value="2222" required></label></div><label>PROFILE<input name="profile" maxlength="80" value="quiet archive" placeholder="quiet archive"></label><div class="modal-note"><span>✦</span> SAFE MODE: Dieses Objekt antwortet keinem Netzwerk-Client. Testsignale werden nur per UI/API eingespeist.</div><div class="modal-actions"><button type="button" class="button button--ghost" data-close-modal>ABBRECHEN</button><button type="submit" class="button button--primary">＋ DECOY ANLEGEN</button></div></form></section>
+    <section id="messageModal" class="modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="messageModalTitle"><div class="modal-top"><p class="eyebrow eyebrow--small">AGENT MESH / CONTEXT HANDOFF</p><button class="modal-close" data-close-modal aria-label="Schließen">×</button></div><h2 id="messageModalTitle">KONTEXT <span>VERTEILEN</span></h2><p class="modal-copy">Eine kurze Übergabe für Agenten und Operator. Sie landet im gemeinsamen Audit Trail.</p><form id="messageForm"><div class="form-row"><label>FROM<select name="sender"><option>OPERATOR</option><option>ORBIT</option><option>SENTINEL</option><option>KAI</option><option>MIKA</option></select></label><label>TO<select name="recipient"><option>ALL AGENTS</option><option>ORBIT</option><option>SENTINEL</option><option>KAI</option><option>MIKA</option></select></label></div><label>MESSAGE<textarea name="text" required maxlength="240" placeholder="Was muss der nächste Agent wissen?"></textarea></label><div class="modal-actions"><button type="button" class="button button--ghost" data-close-modal>ABBRECHEN</button><button type="submit" class="button button--primary">✦ BROADCAST SENDEN</button></div></form></section>
+    <section id="agentModal" class="modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="agentModalTitle"><div class="modal-top"><p class="eyebrow eyebrow--small">AGENT MESH / PRESENCE</p><button class="modal-close" data-close-modal aria-label="Schließen">×</button></div><h2 id="agentModalTitle">AGENT <span>REGISTRIEREN</span></h2><p class="modal-copy">Ein neuer Kontextträger erscheint sofort in der gemeinsamen Übersicht.</p><form id="agentForm"><label>CODENAME<input name="name" required maxlength="32" placeholder="z. B. VEGA" autocomplete="off"></label><label>ROLE<input name="role" required maxlength="80" placeholder="z. B. Evidence observer"></label><label>FOCUS<input name="focus" maxlength="100" placeholder="shared context"></label><div class="modal-actions"><button type="button" class="button button--ghost" data-close-modal>ABBRECHEN</button><button type="submit" class="button button--primary">＋ ONLINE SCHALTEN</button></div></form></section>
+  </div>
+
+  <div id="confirmToast" class="sr-only" aria-live="assertive"></div>
+  <script src="/app.js" defer></script>
+</body>
+</html>

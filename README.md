@@ -1,87 +1,95 @@
-# CyberGuardian Pro - Ethical Hacking & Security Suite
+# CyberGuardian Pro
 
-## ⚠️ Rechtlicher Hinweis
+## Defensives Agenten-Leitpult · Single Source of Do · Honeypot-Simulation
 
-**DIESES TOOL DARF NUR AUF EIGENEN SYSTEMEN VERWENDET WERDEN!**
+CyberGuardian ist eine lokale Security-Suite mit einem neuen Browser-Cockpit für defensive Zusammenarbeit. Der zentrale **Control Plane** ist die Single Source of Truth: Agenten und Operatoren sehen dieselben Vorhaben, Besitzer, Statusänderungen, Übergaben und Signale. Ein Plan wird einmal angelegt und an den gesamten Agent Mesh gebroadcastet — kein verlorener Kontext zwischen Chats oder einzelnen Agenten.
 
-Die Nutzung auf fremden Systemen ohne ausdrückliche, schriftliche Genehmigung ist **illegal** und kann strafrechtliche Konsequenzen haben.
+> **Wichtig:** Das Browser-Labor ist ausdrücklich defensiv und simulation-only. Es öffnet keine Ports, antwortet keinem Netzwerk-Client, führt keine Payloads aus und startet keine Gegenangriffe. Ein Honeypot im Cockpit ist ein virtuelles Testobjekt. Produktive Sicherheitsaktionen dürfen ausschließlich auf eigenen oder ausdrücklich autorisierten Systemen stattfinden.
 
----
+## Was ist neu?
 
-## 🚀 Installation (geklontes Repository)
+- **Startmenü mit vier Prototypen:** Command Deck, Agent Constellation, Honeypot Lab und Signal Drift.
+- **Cyberpunk-/Neo-Tokyo-Interface:** animiertes HUD mit rotem Sun-Core, Scanlines, Signalpartikeln, Agenten-Knoten und responsivem Layout — inspiriert von der Stimmung klassischer Cyberpunk-Anime, ohne fremde Assets zu verwenden.
+- **Single Source of Do:** Pläne anlegen, Owner und Priorität setzen, Status durch den Workflow bewegen und jede Änderung im Mesh sichtbar machen.
+- **Agent-to-Agent-Handoffs:** Presence, Broadcast-Nachrichten und Kontextübergaben landen gemeinsam im lokalen Audit Trail.
+- **Defensives Honeypot-Lab:** virtuelle Decoys konfigurieren, aktivieren/deaktivieren, synthetische Testsignale einspeisen und zugehörige Incidents quittieren.
+- **Persistenz ohne Zusatzdienst:** atomare JSON-Schreibvorgänge nach `~/.cyberguardian/control_plane.json`; der Browser spricht ausschließlich mit der lokalen Control Plane.
+- **Dependency-free Web-Start:** Das Cockpit läuft mit Python-Standardbibliothek. Die ältere CustomTkinter-/Dear-PyGui-Oberfläche bleibt für lokale Desktop-Workflows erhalten.
+
+## Schnellstart: Browser-Cockpit
 
 ```bash
-# 1. Klonen
-git clone https://github.com/INDIEaner84/CyberGuardian.git
 cd CyberGuardian
-
-# 2. Installations-Script ausführen (erstellt VENV + installiert alles)
-./install.sh
-
-# 3. VENV aktivieren (VOR JEDEM START!)
-source venv/bin/activate
-
-# 4. Tool starten
-python3 main.py
+python3 server.py
+# alternativ: python3 launcher.py --browser
 ```
 
-**Oder manuell:**
-```bash
-git clone https://github.com/INDIEaner84/CyberGuardian.git
-cd CyberGuardian
+Danach im Browser öffnen: <http://localhost:4173>
 
-# VENV erstellen
-python3 -m venv venv
-
-# VENV aktivieren
-source venv/bin/activate
-
-# Python-Pakete installieren
-pip install -r requirements.txt
-
-# System-Tools installieren
-sudo apt-get install nmap net-tools tor proxychains4 macchanger python3-tk
-
-# Starten
-python3 main.py
-```
-
----
-
-## 🔧 Für Entwicklung
+Für die Arena-/Container-Vorschau oder einen Zugriff im lokalen Netz:
 
 ```bash
-# Nachdem du Änderungen gemacht hast:
-git add .
-git commit -m "Deine Nachricht"
-git push
+python3 server.py --host 0.0.0.0 --port 4173
 ```
 
----
+Der Server akzeptiert den Preview-Host, verwendet relative API-URLs und bindet standardmäßig auf `0.0.0.0`. Mit `Ctrl+C` beenden.
 
-## 📁 Projektstruktur
+### Control-Plane-API
 
+| Methode | Endpoint | Zweck |
+| --- | --- | --- |
+| `GET` | `/api/state` | Vollständiger gemeinsamer Kontext |
+| `GET` | `/api/health` | Health- und Safety-Status |
+| `POST` | `/api/plans` | Defensiven Plan an alle Agenten broadcasten |
+| `PATCH` | `/api/plans/<id>` | Status oder Fortschritt aktualisieren |
+| `POST` | `/api/agents` | Agent registrieren / online melden |
+| `POST` | `/api/messages` | Kontextübergabe an einen Agenten oder den Mesh |
+| `POST` | `/api/honeypots` | Virtuellen Decoy erstellen |
+| `POST` | `/api/honeypots/<id>/toggle` | Decoy in Simulation aktivieren/pausieren |
+| `POST` | `/api/honeypots/<id>/simulate` | Klar markiertes, synthetisches Testsignal erfassen |
+| `POST` | `/api/incidents/<id>/ack` | Defensive Beobachtung quittieren |
+
+Die API führt keine Netzwerk- oder Systemaktion aus. Der Speicherort kann für Tests überschrieben werden:
+
+```bash
+CYBERGUARDIAN_STATE_FILE=/tmp/cyberguardian-state.json python3 server.py
 ```
+
+## Projektstruktur
+
+```text
 CyberGuardian/
-├── main.py              # GUI Hauptanwendung
-├── install.sh           # Automatische Installation
-├── requirements.txt     # Python-Abhängigkeiten
-├── README.md           # Diese Datei
-├── core/               # 10 Sicherheitsmodule
-├── utils/              # Hilfsmodule
-└── venv/               # Virtuelle Umgebung (nach Installation)
+├── server.py               # Dependency-free Webserver + JSON-API
+├── web/
+│   ├── index.html          # Startmenü, Cockpit und Projektbrief
+│   ├── styles.css          # Cyberpunk-HUD, Animationen, responsive Layout
+│   └── app.js              # Interaktionen, Rendering und API-Client
+├── core/
+│   ├── control_plane.py    # Single Source of Do / atomare Zustandsablage
+│   └── ...                  # bestehende defensive Sicherheitsmodule
+├── main.py                 # bisherige CustomTkinter-Oberfläche
+├── main_anime.py           # bisherige Dear-PyGui-Oberfläche
+├── launcher.py             # Desktop-Abhängigkeitscheck und Fallback
+└── utils/                  # Logging, Backups und Konfiguration
 ```
 
----
+## Desktop-Edition (optional)
 
-## 🔒 Sicherheit
+Die bestehenden Python-Abhängigkeiten werden weiterhin über `requirements.txt` installiert:
 
-- ✅ Logs werden **lokal** gespeichert (nicht im Internet)
-- ✅ Keine Daten werden an Dritte gesendet
-- ✅ Alle Aktionen werden protokolliert
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python3 launcher.py
+```
 
-Log-Speicherort: `~/.cyberguardian/logs/`
+`launcher.py` prüft die Desktop-GUIs und wählt die Anime- oder Classic-Edition. Für das neue Browser-Cockpit sind `customtkinter`, Dear PyGui und Systemtools nicht erforderlich.
 
----
+## Sicherheits- und Ethik-Leitplanken
 
-**WICHTIG: Vor jedem Start `source venv/bin/activate` ausführen!**
+- Nur eigene oder ausdrücklich freigegebene Systeme beobachten.
+- Keine Angriffsautomatisierung, Exploits, Credential-Tests oder Gegenmaßnahmen aus dem Browser-Labor.
+- Synthetische Beispielquellen nutzen dokumentations-reservierte IP-Bereiche (`192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`).
+- Logs bleiben lokal und sind als `simulated`/`synthetic` gekennzeichnet.
+- Für produktive Sensorik sind Authentifizierung, Rollenrechte, Verschlüsselung, Rotation und ein separat gehärteter Collector erforderlich; das Demo-Cockpit ersetzt keinen produktiven SIEM- oder Honeypot-Dienst.
