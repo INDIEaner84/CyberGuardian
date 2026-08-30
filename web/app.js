@@ -7,8 +7,11 @@
   const motionPreferred = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let state = null;
   let opsState = null;
+  let toolsState = null;
   let currentView = 'command';
   let planFilter = 'all';
+  let toolFilter = 'all';
+  let toolSearch = '';
   let offlineMode = false;
   let toastTimer;
   let backgroundFrame;
@@ -112,6 +115,11 @@
       text: 'Hier werden nützliche lokale Tools sicher begrenzt: Capture-Header beobachten, Proxychains prüfen, MAC-Wechsel vorbereiten.',
       next: 'HEALTH SWEEP', output: 'allowlisted · bounded · read-only', action: 'ops-sweep', actionLabel: 'SWEEP STARTEN'
     },
+    tools: {
+      symbol: '▦', kicker: 'YOU ARE HERE / UNIFIED CONTROL', title: 'TOOL ATLAS',
+      text: 'Alle CyberGuardian-Module liegen auf einer Oberfläche. Jede Aktion ist erklärt, allowlisted und mit Ergebnis im Audit Trail gespeichert.',
+      next: 'SAFE AUDIT', output: 'alle Module nacheinander nachvollziehbar', action: 'tools-sweep', actionLabel: 'AUDIT STARTEN'
+    },
     drift: {
       symbol: '⟡', kicker: 'YOU ARE HERE / VISUAL READOUT', title: 'SIGNAL DRIFT',
       text: 'Diese Ansicht zeigt Systemaktivität als Muster. Sie ist Orientierung, nicht die Detailanalyse eines Incidents.',
@@ -179,6 +187,19 @@
     }
   }
 
+  async function loadTools(showError = false) {
+    try {
+      toolsState = await request('/api/tools');
+      renderTools();
+      return true;
+    } catch (error) {
+      toolsState = { tools: [], runs: [], safety: { mode: 'offline demo', browser_mutations: false } };
+      renderTools();
+      if (showError) toast('Tool Atlas ist im Demo-Modus — keine lokale Aktion ausgeführt.', 'error');
+      return false;
+    }
+  }
+
   async function mutate(path, method, body, successMessage) {
     if (offlineMode) {
       toast('Server nicht verbunden. Starte python3 server.py für persistente Änderungen.', 'error');
@@ -216,6 +237,7 @@
     renderMesh();
     renderLab();
     if (opsState) renderOps();
+    if (toolsState) renderTools();
     renderDriftReadouts();
     $('#lastSync').textContent = formatTime(state.updated_at, true);
   }
@@ -378,6 +400,104 @@
     }
   }
 
+  function toolStatusLabel(status) {
+    return ({ ready: 'READY', limited: 'LIMITED', simulated: 'SIMULATION', 'not-installed': 'NOT FOUND' }[status] || String(status || 'UNKNOWN').toUpperCase());
+  }
+
+  function toolCard(tool) {
+    const lastRun = tool.last_run;
+    const action = tool.actions?.[0];
+    const status = String(tool.status || 'limited');
+    return `<article class="tool-card tool-card--${escapeHTML(tool.accent || 'cyan')}" data-tool-category="${escapeHTML(tool.category)}" data-tool-name="${escapeHTML(`${tool.name} ${tool.summary} ${tool.module}`.toLowerCase())}">
+      <div class="tool-card-top"><span class="tool-icon">${escapeHTML(tool.icon || '◈')}</span><div class="tool-heading"><span class="tool-category">${escapeHTML(tool.category)} / ${escapeHTML(tool.module)}</span><h3>${escapeHTML(tool.name)}</h3></div><span class="tool-status tool-status--${escapeHTML(status)}"><i></i>${toolStatusLabel(status)}</span></div>
+      <p class="tool-summary-copy">${escapeHTML(tool.summary)}</p>
+      <div class="tool-boundary"><span>SAFETY RAIL</span><strong>${escapeHTML(tool.boundary)}</strong></div>
+      <p class="tool-explain">${escapeHTML(tool.explain)}</p>
+      <div class="tool-card-meta"><span>${tool.availability ? 'CAPABILITY DETECTED' : 'FALLBACK / LIMITED'}</span><span>${tool.enabled ? 'WATCH ON' : 'WATCH PAUSED'}</span></div>
+      <div class="tool-card-actions"><button class="button button--tiny button--primary" data-run-tool="${escapeHTML(tool.id)}" data-tool-action="${escapeHTML(action?.id || '')}">${escapeHTML(action?.label || 'RUN')} ↗</button><button class="tool-watch-button ${tool.enabled ? 'tool-watch-button--on' : ''}" data-toggle-tool="${escapeHTML(tool.id)}" data-tool-enabled="${tool.enabled ? 'true' : 'false'}">${tool.enabled ? '◉ WATCH ON' : '○ WATCH OFF'}</button></div>
+      <div class="tool-last-run">${lastRun ? `<span>LAST: ${formatTime(lastRun.completed_at, true)} · ${escapeHTML(lastRun.mode)}</span><strong>${escapeHTML(lastRun.status.toUpperCase())}</strong>` : '<span>NO RUN RECORDED YET</span><strong>—</strong>'}</div>
+    </article>`;
+  }
+
+  function runDetails(run) {
+    const details = run.details && Object.keys(run.details).length ? JSON.stringify(run.details, null, 2) : run.error || 'No additional details.';
+    return `<details class="tool-run-details"><summary>DETAILS ↗</summary><pre>${escapeHTML(details)}</pre></details>`;
+  }
+
+  function renderTools() {
+    if (!toolsState) return;
+    const allTools = Array.isArray(toolsState.tools) ? toolsState.tools : [];
+    const filtered = allTools.filter((tool) => {
+      const matchesFilter = toolFilter === 'all' || tool.category === toolFilter;
+      const query = toolSearch.trim().toLowerCase();
+      return matchesFilter && (!query || `${tool.name} ${tool.summary} ${tool.module} ${tool.category}`.toLowerCase().includes(query));
+    });
+    const available = allTools.filter((tool) => tool.availability).length;
+    const watched = allTools.filter((tool) => tool.enabled).length;
+    $('#toolCountAll').textContent = String(allTools.length);
+    $('#toolSummary').innerHTML = `<div><strong>${allTools.length}</strong><span>KNOWN MODULES</span></div><div><strong>${available}</strong><span>CAPABILITIES READY</span></div><div><strong>${watched}</strong><span>WATCH POSTURES ON</span></div><div><strong>${toolsState.runs?.length || 0}</strong><span>AUDITED RUNS</span></div>`;
+    $('#toolGrid').innerHTML = filtered.length ? filtered.map(toolCard).join('') : '<div class="empty-state">NO MODULES MATCH THIS FILTER</div>';
+    $$('.atlas-filters .filter-tab').forEach((tab) => tab.classList.toggle('filter-tab--active', tab.dataset.toolFilter === toolFilter));
+    const runs = Array.isArray(toolsState.runs) ? toolsState.runs : [];
+    $('#toolRunCount').textContent = `${runs.length} RUNS`;
+    $('#toolRunLog').innerHTML = runs.slice(0, 20).map((run) => {
+      const tool = allTools.find((item) => item.id === run.tool_id);
+      return `<article class="tool-run-row"><span class="tool-run-icon">${escapeHTML(tool?.icon || '◈')}</span><div><strong>${escapeHTML(tool?.name || run.tool_id)}</strong><span>${escapeHTML(run.action)} · ${escapeHTML(run.mode)} · ${formatTime(run.completed_at, true)}</span><p>${escapeHTML(run.summary)}</p>${runDetails(run)}</div><b class="tool-run-status tool-run-status--${escapeHTML(run.status)}">${escapeHTML(run.status.toUpperCase())}</b></article>`;
+    }).join('') || '<div class="empty-state">NO TOOL RUNS YET — START WITH A SAFE AUDIT</div>';
+  }
+
+  async function loadToolsAndState() {
+    await Promise.all([loadState(false), loadTools(false)]);
+  }
+
+  async function runTool(toolId, action) {
+    if (offlineMode) { toast('Server nicht verbunden — kein Tool-Run ausgeführt.', 'error'); return; }
+    const button = document.querySelector(`[data-run-tool="${CSS.escape(toolId)}"]`);
+    if (button) { button.disabled = true; button.textContent = '↯ RUNNING …'; }
+    try {
+      const run = await request(`/api/tools/${encodeURIComponent(toolId)}/run`, { method: 'POST', body: JSON.stringify({ action }) });
+      await Promise.all([loadState(false), loadTools(false)]);
+      toast(`${toolId.toUpperCase()} protokolliert: ${run.summary}`, run.status === 'completed' ? 'success' : 'error');
+    } catch (error) {
+      toast(error.message || 'Tool-Run fehlgeschlagen.', 'error');
+    } finally {
+      if (button) { button.disabled = false; button.textContent = `${(toolsState?.tools.find((tool) => tool.id === toolId)?.actions?.[0]?.label || 'RUN')} ↗`; }
+    }
+  }
+
+  async function toggleTool(toolId, enabled) {
+    if (offlineMode) { toast('Server nicht verbunden — Watch-Posture nicht gespeichert.', 'error'); return; }
+    try {
+      await request(`/api/tools/${encodeURIComponent(toolId)}/toggle`, { method: 'POST', body: JSON.stringify({ enabled }) });
+      await Promise.all([loadState(false), loadTools(false)]);
+      toast(`${toolId.toUpperCase()}: Watch-Posture ${enabled ? 'aktiviert' : 'pausiert'}.`, 'success');
+    } catch (error) {
+      toast(error.message || 'Watch-Posture konnte nicht gespeichert werden.', 'error');
+    }
+  }
+
+  async function runToolSweep() {
+    if (offlineMode) { toast('Server nicht verbunden — kein Audit gestartet.', 'error'); return; }
+    if (!toolsState) await loadTools(false);
+    const button = $('#runToolSweep');
+    button.disabled = true;
+    button.textContent = '✦ SAFE AUDIT LÄUFT …';
+    $('#toolAuditState').innerHTML = '<i></i> AUDIT RUNNING';
+    try {
+      const jobs = (toolsState?.tools || []).map((tool) => ({ toolId: tool.id, action: tool.actions?.[0]?.id }));
+      await Promise.all(jobs.filter((job) => job.action).map((job) => request(`/api/tools/${encodeURIComponent(job.toolId)}/run`, { method: 'POST', body: JSON.stringify({ action: job.action }) })));
+      await Promise.all([loadState(false), loadTools(false)]);
+      toast(`${jobs.length} allowlisted Tool-Checks abgeschlossen und auditiert.`, 'success');
+      $('#toolAuditState').innerHTML = '<i></i> AUDIT READY';
+    } catch (error) {
+      toast(error.message || 'Safe Audit fehlgeschlagen.', 'error');
+      $('#toolAuditState').innerHTML = '<i></i> AUDIT ERROR';
+    } finally {
+      button.disabled = false;
+      button.textContent = '✦ SAFE AUDIT AUSFÜHREN';
+    }
+  }
+
   function renderDriftReadouts() {
     const stats = state.stats || {};
     $('#driftSignalCount').textContent = String(stats.signals_today || 0).padStart(3, '0');
@@ -395,13 +515,14 @@
   }
 
   function setView(view) {
-    const allowed = ['command', 'mesh', 'lab', 'ops', 'drift', 'about'];
+    const allowed = ['command', 'mesh', 'lab', 'ops', 'tools', 'drift', 'about'];
     currentView = allowed.includes(view) ? view : 'command';
     $$('.view-panel').forEach((panel) => panel.classList.toggle('view-panel--active', panel.dataset.viewPanel === currentView));
     $$('.nav-item').forEach((button) => button.classList.toggle('nav-item--active', button.dataset.view === currentView));
-    $('#viewCrumb').textContent = ({ command: 'COMMAND DECK', mesh: 'AGENT MESH', lab: 'HONEYPOT LAB', ops: 'DEFENSE OPS', drift: 'SIGNAL DRIFT', about: 'PROJECT BRIEF' })[currentView];
+    $('#viewCrumb').textContent = ({ command: 'COMMAND DECK', mesh: 'AGENT MESH', lab: 'HONEYPOT LAB', ops: 'DEFENSE OPS', tools: 'TOOL ATLAS', drift: 'SIGNAL DRIFT', about: 'PROJECT BRIEF' })[currentView];
     renderTabGuide(currentView);
     if (currentView === 'ops') loadOpsOverview(false);
+    if (currentView === 'tools') loadTools(false);
     if (currentView === 'drift') startDriftCanvas();
   }
 
@@ -624,13 +745,16 @@
     $('#backToStart')?.addEventListener('click', () => { $('#appView').classList.add('is-hidden'); $('#startScreen').classList.remove('is-hidden'); window.scrollTo({ top: 0, behavior: 'auto' }); });
     $$('.nav-item').forEach((button) => button.addEventListener('click', () => setView(button.dataset.view)));
     $$('[data-view-link]').forEach((button) => button.addEventListener('click', () => { enterCockpit(currentView); setView(button.dataset.viewLink); }));
-    $$('.filter-tab').forEach((button) => button.addEventListener('click', () => { planFilter = button.dataset.planFilter; renderPlans(); }));
+    $$('[data-plan-filter]').forEach((button) => button.addEventListener('click', () => { planFilter = button.dataset.planFilter; renderPlans(); }));
+    $$('[data-tool-filter]').forEach((button) => button.addEventListener('click', () => { toolFilter = button.dataset.toolFilter; renderTools(); }));
+    $('#toolSearch')?.addEventListener('input', (event) => { toolSearch = event.target.value; renderTools(); });
     $$('[data-open-modal]').forEach((button) => button.addEventListener('click', () => openModal(button.dataset.openModal)));
     $('#tabGuideAction')?.addEventListener('click', () => {
       const action = $('#tabGuideAction').dataset.guideAction;
       if (['plan', 'honeypot', 'message', 'agent'].includes(action)) openModal(action);
       else if (action === 'ops-sweep') runSweep();
-      else if (['command', 'mesh', 'lab', 'ops', 'drift', 'about'].includes(action)) setView(action);
+      else if (action === 'tools-sweep') runToolSweep();
+      else if (['command', 'mesh', 'lab', 'ops', 'tools', 'drift', 'about'].includes(action)) setView(action);
     });
     $$('[data-close-modal]').forEach((button) => button.addEventListener('click', closeModal));
     $('#modalBackdrop')?.addEventListener('click', (event) => { if (event.target === $('#modalBackdrop')) closeModal(); });
@@ -660,6 +784,13 @@
     $('#macInterface')?.addEventListener('change', () => { lastMacPreview = null; renderOps(); loadMacStatus($('#macInterface').value); });
     $('#macPreview')?.addEventListener('click', previewMac);
     $('#opsSweep')?.addEventListener('click', runSweep);
+    $('#runToolSweep')?.addEventListener('click', runToolSweep);
+    document.addEventListener('click', (event) => {
+      const runButton = event.target.closest('[data-run-tool]');
+      if (runButton) { event.preventDefault(); runTool(runButton.dataset.runTool, runButton.dataset.toolAction); return; }
+      const toggleButton = event.target.closest('[data-toggle-tool]');
+      if (toggleButton) { event.preventDefault(); toggleTool(toggleButton.dataset.toggleTool, toggleButton.dataset.toolEnabled !== 'true'); }
+    });
     $('#planForm')?.addEventListener('submit', async (event) => { event.preventDefault(); const data = new FormData(event.target); const okay = await mutate('/api/plans', 'POST', Object.fromEntries(data.entries()), 'Plan gebroadcastet — jeder Agent sieht jetzt denselben nächsten Schritt.'); if (okay) { event.target.reset(); closeModal(); setView('mesh'); } });
     $('#honeypotForm')?.addEventListener('submit', async (event) => { event.preventDefault(); const data = new FormData(event.target); const okay = await mutate('/api/honeypots', 'POST', Object.fromEntries(data.entries()), 'Virtueller Decoy angelegt — noch kein Listener aktiv.'); if (okay) { event.target.reset(); closeModal(); setView('lab'); } });
     $('#messageForm')?.addEventListener('submit', async (event) => { event.preventDefault(); const data = new FormData(event.target); const okay = await mutate('/api/messages', 'POST', Object.fromEntries(data.entries()), 'Kontext an den Agent Mesh verteilt.'); if (okay) { event.target.reset(); closeModal(); setView('mesh'); } });

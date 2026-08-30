@@ -19,6 +19,8 @@ _MODULES = {
     "IntrusionDetection": ".intrusion_detection",
     "FileIntegrityMonitor": ".file_integrity",
     "ForensicsTools": ".forensics",
+    "DefenseOps": ".defense_ops",
+    "ToolCatalog": ".tool_catalog",
 }
 
 __all__ = list(_MODULES)

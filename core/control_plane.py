@@ -123,6 +123,8 @@ class ControlPlane:
                 "network_actions": "disabled in browser lab",
                 "retention": "local only",
             },
+            "tool_states": {},
+            "tool_runs": [],
             "agents": [
                 {
                     "id": "agent-orbit",
@@ -603,6 +605,54 @@ class ControlPlane:
             self._activity("message.broadcast", f"{message['from']} hat Kontext an {message['to']} gesendet.", "magenta")
             self._save()
             return copy.deepcopy(message)
+
+    def set_tool_state(self, tool_id: Any, enabled: Any = True) -> Dict[str, Any]:
+        """Persist an operator watch-state without starting a system service."""
+
+        clean_id = _clean(tool_id, "", 60)
+        if not clean_id:
+            raise ValueError("Tool-ID darf nicht leer sein")
+        if isinstance(enabled, str):
+            is_enabled = enabled.strip().lower() in {"1", "true", "yes", "on", "enabled"}
+        else:
+            is_enabled = bool(enabled)
+        with self._lock:
+            self._state.setdefault("tool_states", {})[clean_id] = {
+                "enabled": is_enabled,
+                "updated_at": iso(),
+            }
+            self._activity(
+                "tool.watch",
+                f"{clean_id}: {'watch posture aktiviert' if is_enabled else 'watch posture pausiert'}.",
+                "green" if is_enabled else "yellow",
+            )
+            self._save()
+            return copy.deepcopy(self._state["tool_states"][clean_id])
+
+    def record_tool_run(self, run: Dict[str, Any]) -> Dict[str, Any]:
+        """Append a bounded, inspectable result from an allowlisted tool action."""
+
+        if not isinstance(run, dict) or not _clean(run.get("tool_id"), "", 60):
+            raise ValueError("Ungültiger Tool-Run")
+        entry = copy.deepcopy(run)
+        entry["id"] = _clean(entry.get("id"), self._new_id("RUN"), 60)
+        entry["tool_id"] = _clean(entry.get("tool_id"), "unknown", 60)
+        entry["action"] = _clean(entry.get("action"), "read", 60)
+        entry["status"] = _clean(entry.get("status"), "completed", 24)
+        entry["mode"] = _clean(entry.get("mode"), "read-only", 32)
+        entry["summary"] = _clean(entry.get("summary"), "No summary", 220)
+        entry["safe"] = bool(entry.get("safe", True))
+        with self._lock:
+            self._state.setdefault("tool_runs", []).insert(0, entry)
+            self._state["tool_runs"] = self._state["tool_runs"][:120]
+            tone = "green" if entry["status"] == "completed" else "yellow"
+            self._activity("tool.run", f"{entry['tool_id']} / {entry['action']}: {entry['summary']}", tone)
+            self._save()
+            return copy.deepcopy(entry)
+
+    def get_tool_runs(self, count: int = 30) -> List[Dict[str, Any]]:
+        with self._lock:
+            return copy.deepcopy(self._state.get("tool_runs", [])[:max(1, min(int(count), 120))])
 
     def record_observation(self, kind: Any, text: Any, tone: Any = "cyan") -> Dict[str, Any]:
         """Record a read-only local observation without creating a handoff."""

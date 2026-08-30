@@ -14,6 +14,7 @@ CyberGuardian ist eine lokale Security-Suite mit einem neuen Browser-Cockpit fü
 - **Agent-to-Agent-Handoffs:** Presence, Broadcast-Nachrichten und Kontextübergaben landen gemeinsam im lokalen Audit Trail.
 - **Defensives Honeypot-Lab:** virtuelle Decoys konfigurieren, aktivieren/deaktivieren, synthetische Testsignale einspeisen und zugehörige Incidents quittieren.
 - **Defense Ops:** ein begrenzter Packet Observatory im Stil einer Wireshark/tshark-Metadatenansicht, Proxychains-Installationscheck und MAC-Rotationsvorschau. Alles ist allowlisted, zeitlich begrenzt und erklärt die Grenze sichtbar.
+- **Tool Atlas:** alle bekannten Module — Network, Wireless, Ports, Prozesse, WireGuard, Proxy/Anonymizer, Router, IDS/IPS, Integrity, Forensics, Backups, Control Plane und Defense Ops — liegen auf einer Oberfläche. Jeder Run hat Erklärung, Safety Rail, Verfügbarkeit, Watch-Posture und Audit-Eintrag.
 - **Persistenz ohne Zusatzdienst:** atomare JSON-Schreibvorgänge nach `~/.cyberguardian/control_plane.json`; der Browser spricht ausschließlich mit der lokalen Control Plane.
 - **Dependency-free Web-Start:** Das Cockpit läuft mit Python-Standardbibliothek. Die ältere CustomTkinter-/Dear-PyGui-Oberfläche bleibt für lokale Desktop-Workflows erhalten.
 
@@ -54,6 +55,9 @@ Der Server akzeptiert den Preview-Host, verwendet relative API-URLs und bindet s
 | `POST` | `/api/ops/proxy-check` | Proxychains-Binary/Config prüfen, keine Route starten |
 | `GET` | `/api/ops/mac?interface=<name>` | MAC-Adresse read-only lesen |
 | `POST` | `/api/ops/mac-preview` | MAC-Rotation nur als Vorschau erzeugen |
+| `GET` | `/api/tools` | Einheitlichen Katalog aller bekannten Module lesen |
+| `POST` | `/api/tools/<id>/run` | Eine allowlistete Beobachtungsaktion ausführen und auditieren |
+| `POST` | `/api/tools/<id>/toggle` | Watch-Posture lokal aktivieren/pausieren |
 
 Die API führt keine beliebigen Shell-Befehle aus. Packet Capture ist auf wenige Sekunden und Metadatenzeilen begrenzt; MAC- und Proxychains-Aktionen verändern bzw. routen das System nicht. Der Speicherort kann für Tests überschrieben werden:
 
@@ -73,6 +77,7 @@ CyberGuardian/
 ├── core/
 │   ├── control_plane.py    # Single Source of Do / atomare Zustandsablage
 │   ├── defense_ops.py      # allowlisted Capture-, Proxy- und MAC-Inspektion
+│   ├── tool_catalog.py     # gemeinsamer Katalog + erlaubte Tool-Aktionen
 │   └── ...                  # bestehende defensive Sicherheitsmodule
 ├── main.py                 # bisherige CustomTkinter-Oberfläche
 ├── main_anime.py           # bisherige Dear-PyGui-Oberfläche

@@ -27,6 +27,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 from core.control_plane import ControlPlane
 from core.defense_ops import DefenseOps
+from core.tool_catalog import ToolCatalog
 
 
 ROOT = Path(__file__).resolve().parent
@@ -46,6 +47,10 @@ class CyberGuardianHandler(BaseHTTPRequestHandler):
     @property
     def defense_ops(self) -> DefenseOps:
         return self.server.defense_ops  # type: ignore[attr-defined]
+
+    @property
+    def tool_catalog(self) -> ToolCatalog:
+        return self.server.tool_catalog  # type: ignore[attr-defined]
 
     def log_message(self, format: str, *args: Any) -> None:
         # Keep the console useful without noisy per-asset request logs.
@@ -114,7 +119,19 @@ class CyberGuardianHandler(BaseHTTPRequestHandler):
         if path == "/api/ops/overview":
             self._send_json(self.defense_ops.overview())
             return
+        if path == "/api/tools":
+            self._send_json({
+                "tools": self.tool_catalog.catalog(),
+                "runs": self.control_plane.get_tool_runs(40),
+                "safety": {
+                    "mode": "allowlisted",
+                    "browser_mutations": False,
+                    "audit": "every tool run is stored in the local control plane",
+                },
+            })
+            return
         if path == "/api/ops/mac":
+
             query = parse_qs(parsed.query)
             interface = query.get("interface", [""])[0]
             try:
@@ -128,7 +145,19 @@ class CyberGuardianHandler(BaseHTTPRequestHandler):
         path = unquote(urlparse(self.path).path)
         try:
             body = self._read_json()
+            match = re.fullmatch(r"/api/tools/([^/]+)/run", path)
+            if match:
+                run = self.tool_catalog.run(match.group(1), body.get("action"))
+                stored = self.control_plane.record_tool_run(run)
+                self._send_json(stored, HTTPStatus.CREATED if stored.get("status") == "completed" else HTTPStatus.OK)
+                return
+            match = re.fullmatch(r"/api/tools/([^/]+)/toggle", path)
+            if match:
+                result = self.control_plane.set_tool_state(match.group(1), body.get("enabled", True))
+                self._send_json(result)
+                return
             if path == "/api/ops/capture":
+
                 result = self.defense_ops.capture_metadata(
                     body.get("interface", "lo"),
                     body.get("duration", 5),
@@ -267,6 +296,7 @@ class CyberGuardianServer(ThreadingHTTPServer):
         super().__init__(address, CyberGuardianHandler)
         self.control_plane = control_plane
         self.defense_ops = defense_ops or DefenseOps()
+        self.tool_catalog = ToolCatalog(control_plane, self.defense_ops)
 
 
 def build_parser() -> argparse.ArgumentParser:
