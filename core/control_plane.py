@@ -509,7 +509,10 @@ class ControlPlane:
             honeypot = next((p for p in self._state["honeypots"] if p["id"] == honeypot_id), None)
             if not honeypot:
                 raise KeyError(f"Honeypot nicht gefunden: {honeypot_id}")
-            is_active = bool(active)
+            if isinstance(active, str):
+                is_active = active.strip().lower() in {"1", "true", "yes", "on", "active"}
+            else:
+                is_active = bool(active)
             honeypot["status"] = "active" if is_active else "standby"
             self._activity(
                 "honeypot.status",
@@ -600,6 +603,25 @@ class ControlPlane:
             self._activity("message.broadcast", f"{message['from']} hat Kontext an {message['to']} gesendet.", "magenta")
             self._save()
             return copy.deepcopy(message)
+
+    def record_observation(self, kind: Any, text: Any, tone: Any = "cyan") -> Dict[str, Any]:
+        """Record a read-only local observation without creating a handoff."""
+
+        clean_text = _clean(text, "", 220)
+        if not clean_text:
+            raise ValueError("Beobachtung darf nicht leer sein")
+        with self._lock:
+            event = {
+                "id": self._new_id("EVT"),
+                "kind": _clean(kind, "observation", 40),
+                "tone": _clean(tone, "cyan", 16),
+                "text": clean_text,
+                "created_at": iso(),
+            }
+            self._state.setdefault("activity", []).insert(0, event)
+            self._state["activity"] = self._state["activity"][:80]
+            self._save()
+            return copy.deepcopy(event)
 
 
 __all__ = ["ControlPlane"]

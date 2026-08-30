@@ -4,9 +4,12 @@
 Run locally with:
     python3 server.py
 
-The server exposes only the defensive coordination API and serves the static
-browser cockpit from ``web/``.  It deliberately contains no network scanner or
-command execution path.  Honeypot telemetry is simulation-only.
+The server exposes the defensive coordination API and serves the static
+browser cockpit from ``web/``.  Optional Defense Ops endpoints are strictly
+allowlisted and bounded: they can inspect local capabilities, perform a short
+packet-metadata capture when tshark/tcpdump is installed, inspect proxychains,
+and preview a MAC rotation.  They never run arbitrary commands or mutate the
+network identity.  Honeypot telemetry is simulation-only.
 """
 
 from __future__ import annotations
@@ -20,9 +23,10 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Dict, Optional
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 from core.control_plane import ControlPlane
+from core.defense_ops import DefenseOps
 
 
 ROOT = Path(__file__).resolve().parent
@@ -38,6 +42,10 @@ class CyberGuardianHandler(BaseHTTPRequestHandler):
     @property
     def control_plane(self) -> ControlPlane:
         return self.server.control_plane  # type: ignore[attr-defined]
+
+    @property
+    def defense_ops(self) -> DefenseOps:
+        return self.server.defense_ops  # type: ignore[attr-defined]
 
     def log_message(self, format: str, *args: Any) -> None:
         # Keep the console useful without noisy per-asset request logs.
@@ -103,13 +111,57 @@ class CyberGuardianHandler(BaseHTTPRequestHandler):
                 }
             )
             return
+        if path == "/api/ops/overview":
+            self._send_json(self.defense_ops.overview())
+            return
+        if path == "/api/ops/mac":
+            query = parse_qs(parsed.query)
+            interface = query.get("interface", [""])[0]
+            try:
+                self._send_json(self.defense_ops.mac_status(interface))
+            except ValueError as exc:
+                self._send_error_json(str(exc), HTTPStatus.BAD_REQUEST)
+            return
         self._serve_static(path)
 
     def do_POST(self) -> None:  # noqa: N802
         path = unquote(urlparse(self.path).path)
         try:
             body = self._read_json()
+            if path == "/api/ops/capture":
+                result = self.defense_ops.capture_metadata(
+                    body.get("interface", "lo"),
+                    body.get("duration", 5),
+                    body.get("limit", 12),
+                    body.get("preset", "metadata"),
+                )
+                self.control_plane.record_observation(
+                    "ops.capture",
+                    f"Packet Observatory: {result.get('engine', 'unknown')} / {result.get('mode', 'unknown')} / {len(result.get('packets', []))} metadata rows.",
+                    "green" if result.get("ok") else "yellow",
+                )
+                self._send_json(result, HTTPStatus.CREATED if result.get("ok") else HTTPStatus.OK)
+                return
+            if path == "/api/ops/mac-preview":
+                result = self.defense_ops.mac_preview(body.get("interface", "lo"))
+                self.control_plane.record_observation(
+                    "ops.mac.preview",
+                    f"MAC-Rotation für {result['interface']} nur als Vorschau erzeugt — keine Mutation.",
+                    "cyan",
+                )
+                self._send_json(result)
+                return
+            if path == "/api/ops/proxy-check":
+                result = self.defense_ops.proxy_status()
+                self.control_plane.record_observation(
+                    "ops.proxy.check",
+                    f"Proxychains-Profil geprüft: {'bereit' if result.get('configured') else 'nicht konfiguriert'} — keine Route gestartet.",
+                    "cyan",
+                )
+                self._send_json(result)
+                return
             if path == "/api/agents":
+
                 result = self.control_plane.register_agent(body.get("name"), body.get("role"), body.get("focus"))
                 self._send_json(result, HTTPStatus.CREATED)
                 return
@@ -211,9 +263,10 @@ class CyberGuardianServer(ThreadingHTTPServer):
     allow_reuse_address = True
     daemon_threads = True
 
-    def __init__(self, address: tuple[str, int], control_plane: ControlPlane):
+    def __init__(self, address: tuple[str, int], control_plane: ControlPlane, defense_ops: Optional[DefenseOps] = None):
         super().__init__(address, CyberGuardianHandler)
         self.control_plane = control_plane
+        self.defense_ops = defense_ops or DefenseOps()
 
 
 def build_parser() -> argparse.ArgumentParser:

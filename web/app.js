@@ -6,6 +6,7 @@
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const motionPreferred = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let state = null;
+  let opsState = null;
   let currentView = 'command';
   let planFilter = 'all';
   let offlineMode = false;
@@ -38,6 +39,15 @@
     messages: [{ id: 'MSG-001', from: 'ORBIT', to: 'ALL AGENTS', kind: 'broadcast', text: 'SOT synchronisiert: Alle defensiven Agenten sehen denselben Kontext.', created_at: new Date().toISOString() }],
     activity: [{ id: 'EVT-001', kind: 'policy', tone: 'green', text: 'Safe mode bestätigt: Nur lokale Simulation und defensive Beobachtung.', created_at: new Date().toISOString() }],
     stats: { online_agents: 3, total_agents: 4, active_plans: 1, open_incidents: 1, active_honeypots: 1, signals_today: 1 }
+  };
+
+  const fallbackOps = {
+    tools: { tshark: false, tcpdump: false, wireshark: false, proxychains: false, macchanger: false, ip: false },
+    capture_engine: 'simulation',
+    interfaces: ['lo'],
+    safe_boundary: { packet_capture: 'metadata only / bounded', proxychains: 'profile inspection only', mac_changer: 'preview only / no mutation' },
+    proxy: { available: false, binary: '', configs: [], configured: false, mode: 'inspection only' },
+    mac: { lo: { interface: 'lo', current: 'unknown', macchanger_available: false, mode: 'read-only', mutated: false } }
   };
 
   function clone(value) {
@@ -97,6 +107,11 @@
       text: 'Hier baust du virtuelle Decoys für sichere Übungen. Erst anlegen, dann aktivieren, dann ein synthetisches Signal testen.',
       next: 'DECOY ERSTELLEN', output: 'kein Port · keine Antwort · kein Angriff', action: 'honeypot', actionLabel: 'DECOY ANLEGEN'
     },
+    ops: {
+      symbol: '⌘', kicker: 'YOU ARE HERE / LOCAL TOOLCHAIN', title: 'DEFENSE OPS',
+      text: 'Hier werden nützliche lokale Tools sicher begrenzt: Capture-Header beobachten, Proxychains prüfen, MAC-Wechsel vorbereiten.',
+      next: 'HEALTH SWEEP', output: 'allowlisted · bounded · read-only', action: 'ops-sweep', actionLabel: 'SWEEP STARTEN'
+    },
     drift: {
       symbol: '⟡', kicker: 'YOU ARE HERE / VISUAL READOUT', title: 'SIGNAL DRIFT',
       text: 'Diese Ansicht zeigt Systemaktivität als Muster. Sie ist Orientierung, nicht die Detailanalyse eines Incidents.',
@@ -151,6 +166,19 @@
     }
   }
 
+  async function loadOpsOverview(showError = false) {
+    try {
+      opsState = await request('/api/ops/overview');
+      renderOps();
+      return true;
+    } catch (error) {
+      opsState = clone(fallbackOps);
+      renderOps();
+      if (showError) toast('Defense Ops läuft im Demo-Modus — lokale Tools bleiben unberührt.', 'error');
+      return false;
+    }
+  }
+
   async function mutate(path, method, body, successMessage) {
     if (offlineMode) {
       toast('Server nicht verbunden. Starte python3 server.py für persistente Änderungen.', 'error');
@@ -187,6 +215,7 @@
     renderActivity();
     renderMesh();
     renderLab();
+    if (opsState) renderOps();
     renderDriftReadouts();
     $('#lastSync').textContent = formatTime(state.updated_at, true);
   }
@@ -291,6 +320,64 @@
     $('#signalTable').innerHTML = logItems.length ? head + rows : '<div class="empty-state">NO SIGNALS — LAB IS QUIET</div>';
   }
 
+  function setOpsSelectOptions(selector, values, includeAny = false) {
+    const select = $(selector);
+    if (!select) return;
+    const previous = select.value;
+    const options = includeAny ? ['any', ...values] : values;
+    select.innerHTML = options.map((value) => `<option value="${escapeHTML(value)}">${escapeHTML(value.toUpperCase())}</option>`).join('');
+    if (options.includes(previous)) select.value = previous;
+  }
+
+  let lastCapture = null;
+  let lastMacPreview = null;
+  let sweepRanAt = null;
+
+  function renderCaptureResult() {
+    const target = $('#captureResult');
+    if (!target) return;
+    if (!lastCapture) {
+      target.innerHTML = '<span class="ops-result-placeholder">Bereit. Profil und Interface wählen, dann Capture starten.</span>';
+      return;
+    }
+    const demo = lastCapture.mode === 'simulation';
+    const packets = Array.isArray(lastCapture.packets) ? lastCapture.packets : [];
+    const rows = packets.slice(0, 30).map((packet) => `<div class="packet-row"><span>${escapeHTML(packet.time || '—')}</span><strong>${escapeHTML(packet.source || '—')}</strong><strong>${escapeHTML(packet.destination || '—')}</strong><b>${escapeHTML(packet.protocol || '—')}</b></div>`).join('');
+    target.innerHTML = `<div class="ops-result-head"><span>${lastCapture.ok ? `${packets.length} METADATA ROWS` : 'CAPTURE NICHT VERFÜGBAR'}</span><small class="${demo ? 'is-demo' : ''}">${demo ? 'SAFE DEMO' : escapeHTML(String(lastCapture.engine || 'LOCAL').toUpperCase())}</small></div>${lastCapture.ok && packets.length ? `<div class="packet-table"><div class="packet-row packet-row--head"><span>TIME</span><span>SOURCE</span><span>DESTINATION</span><span>PROTO</span></div>${rows}</div>` : `<span class="ops-result-placeholder">${escapeHTML(lastCapture.notice || lastCapture.error || 'Keine Zeilen empfangen.')}</span>`}`;
+  }
+
+  function renderOps() {
+    if (!opsState) return;
+    const interfaces = Array.isArray(opsState.interfaces) && opsState.interfaces.length ? opsState.interfaces : ['lo'];
+    setOpsSelectOptions('#captureInterface', interfaces, true);
+    setOpsSelectOptions('#macInterface', interfaces, false);
+    const engine = String(opsState.capture_engine || 'simulation');
+    const badge = $('#captureModeBadge');
+    if (badge) {
+      badge.textContent = engine === 'simulation' ? 'SAFE DEMO FALLBACK' : `${engine.toUpperCase()} / METADATA`;
+      badge.className = `tag ${engine === 'simulation' ? 'tag--high' : 'tag--green'}`;
+    }
+    const toolLabels = { tshark: 'TSHARK', tcpdump: 'TCPDUMP', proxychains: 'PROXYCHAINS', macchanger: 'MACCHANGER', ip: 'IP TOOL' };
+    const tools = opsState.tools || {};
+    $('#opsCapabilityStrip').innerHTML = Object.entries(toolLabels).map(([key, label]) => `<span class="ops-capability ${tools[key] ? '' : 'ops-capability--missing'}">${label} ${tools[key] ? 'READY' : 'NOT FOUND'}</span>`).join('') + `<span class="ops-capability ${engine === 'simulation' ? 'ops-capability--pending' : ''}">CAPTURE: ${escapeHTML(engine.toUpperCase())}</span>`;
+    const proxy = opsState.proxy || {};
+    $('#proxyStateBadge').textContent = proxy.configured ? 'READY' : proxy.available ? 'BINARY ONLY' : 'NOT FOUND';
+    $('#proxyStateBadge').className = `tag ${proxy.configured ? 'tag--green' : 'tag--high'}`;
+    $('#proxyDetails').innerHTML = `<div><span>BINARY</span><strong class="${proxy.available ? 'is-ready' : 'is-missing'}">${escapeHTML(proxy.binary || 'NOT FOUND')}</strong></div><div><span>CONFIG</span><strong class="${proxy.configs?.length ? 'is-ready' : 'is-missing'}">${proxy.configs?.length ? `${proxy.configs.length} FOUND` : 'NOT FOUND'}</strong></div><div><span>MODE</span><strong>INSPECTION ONLY</strong></div>`;
+    const selectedInterface = $('#macInterface')?.value || interfaces[0];
+    const mac = (opsState.mac || {})[selectedInterface] || { current: 'unknown', macchanger_available: false };
+    $('#macStatus').innerHTML = `<span>CURRENT MAC</span><strong>${escapeHTML(mac.current || 'unknown')}</strong>`;
+    if (lastMacPreview && lastMacPreview.interface === selectedInterface) {
+      $('#macPreviewOutput').innerHTML = `<div class="mac-preview"><span>PROPOSED LOCAL UNICAST</span><strong>${escapeHTML(lastMacPreview.proposed)}</strong><code>${escapeHTML(lastMacPreview.command_preview)}</code><small class="ops-result-placeholder">${escapeHTML(lastMacPreview.warning)}</small></div>`;
+    } else {
+      $('#macPreviewOutput').innerHTML = '<span class="ops-result-placeholder">Noch keine Vorschau. Das System bleibt unverändert.</span>';
+    }
+    renderCaptureResult();
+    if (sweepRanAt) {
+      $('#opsSweepResult').innerHTML = `<span class="sweep-check"><strong>DISCOVER</strong><small>${Object.values(tools).filter(Boolean).length} lokale Tools verfügbar · ${interfaces.length} Interfaces</small></span><span class="sweep-check ${proxy.configured ? '' : 'sweep-check--warn'}"><strong>PROXYCHAINS</strong><small>${proxy.configured ? 'Binary + Config gefunden' : 'nicht vollständig konfiguriert'}</small></span><span class="sweep-check"><strong>MAC READ</strong><small>${escapeHTML(mac.current || 'unknown')} · no mutation</small></span><span class="sweep-check ${lastCapture?.ok ? '' : 'sweep-check--warn'}"><strong>CAPTURE</strong><small>${lastCapture?.ok ? `${lastCapture.packets?.length || 0} metadata rows` : 'nicht verfügbar'}</small></span>`;
+    }
+  }
+
   function renderDriftReadouts() {
     const stats = state.stats || {};
     $('#driftSignalCount').textContent = String(stats.signals_today || 0).padStart(3, '0');
@@ -308,12 +395,13 @@
   }
 
   function setView(view) {
-    const allowed = ['command', 'mesh', 'lab', 'drift', 'about'];
+    const allowed = ['command', 'mesh', 'lab', 'ops', 'drift', 'about'];
     currentView = allowed.includes(view) ? view : 'command';
     $$('.view-panel').forEach((panel) => panel.classList.toggle('view-panel--active', panel.dataset.viewPanel === currentView));
     $$('.nav-item').forEach((button) => button.classList.toggle('nav-item--active', button.dataset.view === currentView));
-    $('#viewCrumb').textContent = ({ command: 'COMMAND DECK', mesh: 'AGENT MESH', lab: 'HONEYPOT LAB', drift: 'SIGNAL DRIFT', about: 'PROJECT BRIEF' })[currentView];
+    $('#viewCrumb').textContent = ({ command: 'COMMAND DECK', mesh: 'AGENT MESH', lab: 'HONEYPOT LAB', ops: 'DEFENSE OPS', drift: 'SIGNAL DRIFT', about: 'PROJECT BRIEF' })[currentView];
     renderTabGuide(currentView);
+    if (currentView === 'ops') loadOpsOverview(false);
     if (currentView === 'drift') startDriftCanvas();
   }
 
@@ -361,6 +449,108 @@
     const pot = state.honeypots.find((item) => item.id === honeypotId);
     if (!pot) return;
     mutate(`/api/honeypots/${encodeURIComponent(honeypotId)}/toggle`, 'POST', { active: pot.status !== 'active' }, `${pot.name} ist jetzt ${pot.status === 'active' ? 'standby' : 'active'} (Simulation).`);
+  }
+
+  async function runCapture() {
+    if (offlineMode) { toast('Server nicht verbunden — Defense Ops bleibt im Demo-Modus.', 'error'); return; }
+    const button = $('#runCapture');
+    button.disabled = true;
+    button.textContent = '↯ CAPTURE LÄUFT …';
+    try {
+      const result = await request('/api/ops/capture', {
+        method: 'POST',
+        body: JSON.stringify({
+          interface: $('#captureInterface').value || 'lo',
+          preset: $('#capturePreset').value,
+          duration: $('#captureDuration').value,
+          limit: $('#captureLimit').value
+        })
+      });
+      lastCapture = result;
+      await Promise.all([loadState(false), loadOpsOverview(false)]);
+      toast(result.mode === 'simulation' ? 'Kein Capture-Tool gefunden — sichere Demo-Metadaten angezeigt.' : 'Metadaten-Capture abgeschlossen. Kein Payload angefordert.', result.ok ? 'success' : 'error');
+    } catch (error) {
+      toast(error.message || 'Capture konnte nicht gestartet werden.', 'error');
+    } finally {
+      button.disabled = false;
+      button.textContent = '↯ CAPTURE STARTEN';
+    }
+  }
+
+  async function checkProxy() {
+    if (offlineMode) { toast('Server nicht verbunden — Proxychains wird nur lokal geprüft.', 'error'); return; }
+    const button = $('#proxyCheck');
+    button.disabled = true;
+    button.textContent = '◎ PRÜFE …';
+    try {
+      const result = await request('/api/ops/proxy-check', { method: 'POST', body: '{}' });
+      if (!opsState) opsState = clone(fallbackOps);
+      opsState.proxy = result;
+      renderOps();
+      await loadState(false);
+      toast(result.configured ? 'Proxychains-Binary und Config gefunden — keine Route gestartet.' : 'Proxychains ist nicht vollständig konfiguriert.', result.configured ? 'success' : 'normal');
+    } catch (error) {
+      toast(error.message || 'Proxychains-Check fehlgeschlagen.', 'error');
+    } finally {
+      button.disabled = false;
+      button.textContent = '◎ PROFILE PRÜFEN';
+    }
+  }
+
+  async function loadMacStatus(interfaceName) {
+    if (!interfaceName || offlineMode) return;
+    try {
+      const result = await request(`/api/ops/mac?interface=${encodeURIComponent(interfaceName)}`);
+      if (!opsState) opsState = clone(fallbackOps);
+      opsState.mac = opsState.mac || {};
+      opsState.mac[interfaceName] = result;
+      renderOps();
+    } catch (error) {
+      toast(error.message || 'MAC-Status konnte nicht gelesen werden.', 'error');
+    }
+  }
+
+  async function previewMac() {
+    if (offlineMode) { toast('Server nicht verbunden — MAC bleibt unverändert.', 'error'); return; }
+    const interfaceName = $('#macInterface').value || 'lo';
+    const button = $('#macPreview');
+    button.disabled = true;
+    button.textContent = '◇ ERZEUGE VORSCHAU …';
+    try {
+      lastMacPreview = await request('/api/ops/mac-preview', { method: 'POST', body: JSON.stringify({ interface: interfaceName }) });
+      renderOps();
+      await loadState(false);
+      toast('MAC-Rotation nur vorbereitet — Systemidentität nicht verändert.', 'success');
+    } catch (error) {
+      toast(error.message || 'MAC-Vorschau fehlgeschlagen.', 'error');
+    } finally {
+      button.disabled = false;
+      button.textContent = '◇ ROTATION VORSCHAU';
+    }
+  }
+
+  async function runSweep() {
+    if (offlineMode) { toast('Server nicht verbunden — kein Sweep ausgeführt.', 'error'); return; }
+    const button = $('#opsSweep');
+    button.disabled = true;
+    button.textContent = '✦ SWEEP LÄUFT …';
+    try {
+      await loadOpsOverview(false);
+      const result = await request('/api/ops/capture', {
+        method: 'POST',
+        body: JSON.stringify({ interface: $('#captureInterface').value || 'lo', preset: $('#capturePreset').value || 'metadata', duration: 3, limit: 8 })
+      });
+      lastCapture = result;
+      sweepRanAt = Date.now();
+      await Promise.all([loadState(false), loadOpsOverview(false)]);
+      renderOps();
+      toast('Read-only Health Sweep abgeschlossen — Ergebnis im Audit Trail.', result.ok ? 'success' : 'normal');
+    } catch (error) {
+      toast(error.message || 'Health Sweep fehlgeschlagen.', 'error');
+    } finally {
+      button.disabled = false;
+      button.textContent = '✦ SWEEP AUSFÜHREN';
+    }
   }
 
   function startBackgroundCanvas() {
@@ -439,7 +629,8 @@
     $('#tabGuideAction')?.addEventListener('click', () => {
       const action = $('#tabGuideAction').dataset.guideAction;
       if (['plan', 'honeypot', 'message', 'agent'].includes(action)) openModal(action);
-      else if (['command', 'mesh', 'lab', 'drift', 'about'].includes(action)) setView(action);
+      else if (action === 'ops-sweep') runSweep();
+      else if (['command', 'mesh', 'lab', 'ops', 'drift', 'about'].includes(action)) setView(action);
     });
     $$('[data-close-modal]').forEach((button) => button.addEventListener('click', closeModal));
     $('#modalBackdrop')?.addEventListener('click', (event) => { if (event.target === $('#modalBackdrop')) closeModal(); });
@@ -463,6 +654,12 @@
       if (pot) { simulateSignal(pot.id); setView('drift'); } else toast('Signal Pulse benötigt einen aktiven virtuellen Decoy.', 'error');
     });
     $('#motionToggle')?.addEventListener('click', () => { document.body.classList.toggle('reduce-motion'); toast(document.body.classList.contains('reduce-motion') ? 'Animationen pausiert.' : 'Animationen aktiviert.'); });
+    $('#opsRefresh')?.addEventListener('click', () => loadOpsOverview(true));
+    $('#runCapture')?.addEventListener('click', runCapture);
+    $('#proxyCheck')?.addEventListener('click', checkProxy);
+    $('#macInterface')?.addEventListener('change', () => { lastMacPreview = null; renderOps(); loadMacStatus($('#macInterface').value); });
+    $('#macPreview')?.addEventListener('click', previewMac);
+    $('#opsSweep')?.addEventListener('click', runSweep);
     $('#planForm')?.addEventListener('submit', async (event) => { event.preventDefault(); const data = new FormData(event.target); const okay = await mutate('/api/plans', 'POST', Object.fromEntries(data.entries()), 'Plan gebroadcastet — jeder Agent sieht jetzt denselben nächsten Schritt.'); if (okay) { event.target.reset(); closeModal(); setView('mesh'); } });
     $('#honeypotForm')?.addEventListener('submit', async (event) => { event.preventDefault(); const data = new FormData(event.target); const okay = await mutate('/api/honeypots', 'POST', Object.fromEntries(data.entries()), 'Virtueller Decoy angelegt — noch kein Listener aktiv.'); if (okay) { event.target.reset(); closeModal(); setView('lab'); } });
     $('#messageForm')?.addEventListener('submit', async (event) => { event.preventDefault(); const data = new FormData(event.target); const okay = await mutate('/api/messages', 'POST', Object.fromEntries(data.entries()), 'Kontext an den Agent Mesh verteilt.'); if (okay) { event.target.reset(); closeModal(); setView('mesh'); } });

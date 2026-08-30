@@ -69,7 +69,7 @@
           <p class="eyebrow"><span class="eyebrow-line"></span>START MENU / SELECT A PROTOTYPE</p>
           <h2>WIE SOLL SICH<br><span>DEIN LEITSTAND</span> ANFÜHLEN?</h2>
         </div>
-        <p>Vier Interaktionsprototypen. Ein gemeinsamer Datenkern. Wähle einen Einstieg — du kannst jederzeit im Cockpit wechseln.</p>
+          <p>Fünf Interaktionsprototypen. Ein gemeinsamer Datenkern. Wähle einen Einstieg — du kannst jederzeit im Cockpit wechseln.</p>
       </div>
 
       <div class="prototype-grid">
@@ -100,6 +100,13 @@
           <span class="prototype-card-title">SIGNAL DRIFT</span>
           <span class="prototype-card-copy">Die visuelle Akira-inspirierte Nachtansicht für Live-Aktivität, Muster und die Temperatur des Systems.</span>
           <span class="prototype-card-footer"><b>IMMERSIVE</b><i>↗</i></span>
+        </button>
+        <button class="prototype-card" data-enter="ops">
+          <span class="prototype-index">05 / OPS</span>
+          <span class="prototype-glyph glyph-ops">⌘</span>
+          <span class="prototype-card-title">DEFENSE OPS</span>
+          <span class="prototype-card-copy">Wireshark-ähnliche Metadaten-Captures, Proxychains-Checks und MAC-Rotation als sichere Vorschau.</span>
+          <span class="prototype-card-footer"><b>LOCAL TOOLCHAIN</b><i>↗</i></span>
         </button>
       </div>
     </section>
@@ -132,13 +139,14 @@
     <div class="app-body">
       <aside class="sidebar">
         <div class="sidebar-top">
-          <p class="side-label">OPERATIONS / 04</p>
+          <p class="side-label">OPERATIONS / 06</p>
           <nav class="main-nav" aria-label="Hauptnavigation">
             <button class="nav-item nav-item--active" data-view="command" title="Startpunkt: Lagebild, Pläne und nächste Schritte"><span class="nav-number">01</span><span class="nav-symbol">◈</span><span>COMMAND DECK</span><b>↗</b></button>
             <button class="nav-item" data-view="mesh" title="Agenten, Handoffs und der gemeinsame Plan-Workflow"><span class="nav-number">02</span><span class="nav-symbol">✣</span><span>AGENT MESH</span><b>↗</b></button>
             <button class="nav-item" data-view="lab" title="Virtuelle Honeypots und synthetische Testsignale"><span class="nav-number">03</span><span class="nav-symbol">⌁</span><span>HONEYPOT LAB</span><b>↗</b></button>
-            <button class="nav-item" data-view="drift" title="Visuelle Systemtemperatur: Muster statt Tabellen"><span class="nav-number">04</span><span class="nav-symbol">⟡</span><span>SIGNAL DRIFT</span><b>↗</b></button>
-            <button class="nav-item" data-view="about" title="Projektverständnis, Architektur und Sicherheitsleitplanken"><span class="nav-number">05</span><span class="nav-symbol">?</span><span>PROJECT BRIEF</span><b>↗</b></button>
+            <button class="nav-item" data-view="ops" title="Wireshark-ähnliche Metadaten, Proxychains-Check und MAC-Vorschau"><span class="nav-number">04</span><span class="nav-symbol">⌘</span><span>DEFENSE OPS</span><b>↗</b></button>
+            <button class="nav-item" data-view="drift" title="Visuelle Systemtemperatur: Muster statt Tabellen"><span class="nav-number">05</span><span class="nav-symbol">⟡</span><span>SIGNAL DRIFT</span><b>↗</b></button>
+            <button class="nav-item" data-view="about" title="Projektverständnis, Architektur und Sicherheitsleitplanken"><span class="nav-number">06</span><span class="nav-symbol">?</span><span>PROJECT BRIEF</span><b>↗</b></button>
           </nav>
         </div>
         <div class="sidebar-bottom">
@@ -243,6 +251,18 @@
           <div class="lab-workflow" aria-label="Honeypot Lab Ablauf"><div class="lab-workflow-step"><span>01</span><strong>CREATE</strong><small>Decoy-Profil anlegen</small></div><i>›</i><div class="lab-workflow-step"><span>02</span><strong>ACTIVATE</strong><small>virtuellen Node beobachten</small></div><i>›</i><div class="lab-workflow-step"><span>03</span><strong>SIMULATE</strong><small>Testsignal einspeisen</small></div><i>›</i><div class="lab-workflow-step"><span>04</span><strong>ACK</strong><small>Incident quittieren</small></div></div>
           <div id="labPotGrid" class="honeypot-grid"></div>
           <section class="panel signal-log-panel"><div class="panel-heading"><div><p class="panel-kicker">CAPTURED TELEMETRY / SYNTHETIC</p><h2>SIGNAL LOG</h2></div><div class="log-actions"><span class="panel-code" id="signalLogCount">0 EVENTS</span><button class="button button--tiny button--ghost" id="simulateRandomSignal">＋ TESTSIGNAL EINSPEISEN</button></div></div><div id="signalTable" class="signal-table"></div></section>
+        </section>
+
+        <section class="view-panel" data-view-panel="ops">
+          <div class="view-heading view-heading--compact"><div><p class="eyebrow"><span class="eyebrow-line"></span>DEFENSIVE TOOLCHAIN / LOCAL OPERATOR</p><h1>DEFENSE <span>OPS</span></h1><p class="heading-copy">Nützliche Beobachtung automatisieren — mit festen Grenzen statt einem offenen Command Runner.</p></div><div class="heading-actions"><button class="button button--ghost" id="opsRefresh">↻ CAPABILITIES AKTUALISIEREN</button><button class="button button--primary" data-view-link="lab">HONEYPOT LAB ↗</button></div></div>
+          <div class="explain-strip explain-strip--ops"><span class="explain-strip-icon">⌘</span><div><strong>WAS HIER AUTOMATISIERT WIRD</strong><p>Lokale Werkzeuge werden erkannt und sicher eingebunden: Paket-Header ansehen wie in Wireshark, Proxychains nur prüfen und MAC-Rotation nur vorbereiten. Keine beliebigen Shell-Befehle, keine Netzwerk-Mutation aus dem Browser.</p></div><span class="explain-strip-rule">ALLOWLIST / BOUNDED / READ ONLY</span></div>
+          <div id="opsCapabilityStrip" class="ops-capability-strip"><span class="ops-capability ops-capability--pending">CAPABILITIES WERDEN GELADEN …</span></div>
+          <div class="ops-grid">
+            <section class="panel ops-card ops-card--capture"><div class="panel-heading"><div><p class="panel-kicker">01 / PACKET OBSERVATORY</p><h2>WIRESHARK-STYLE CAPTURE</h2></div><span id="captureModeBadge" class="tag tag--green">METADATA ONLY</span></div><div class="ops-card-copy">Ein kurzer, begrenzter Mitschnitt von <strong>Header-Metadaten</strong>. Kein Payload-Content. Wenn tshark/tcpdump fehlt, zeigt das Cockpit eine sichere Demo.</div><div class="ops-form-grid"><label>INTERFACE<select id="captureInterface"></select></label><label>PROFILE<select id="capturePreset"><option value="metadata">ALL METADATA</option><option value="tcp">TCP ONLY</option><option value="dns">DNS / UDP 53</option><option value="web">HTTP / PORT 80</option></select></label><label>SECONDS<select id="captureDuration"><option value="3">3 SEC</option><option value="5" selected>5 SEC</option><option value="8">8 SEC</option></select></label><label>MAX ROWS<select id="captureLimit"><option value="8">08</option><option value="12" selected>12</option><option value="20">20</option></select></label></div><button id="runCapture" class="button button--primary ops-run-button">↯ CAPTURE STARTEN</button><div id="captureResult" class="ops-result"><span class="ops-result-placeholder">Bereit. Profil und Interface wählen, dann Capture starten.</span></div></section>
+            <section class="panel ops-card ops-card--proxy"><div class="panel-heading"><div><p class="panel-kicker">02 / ROUTE INSPECTOR</p><h2>PROXYCHAINS</h2></div><span id="proxyStateBadge" class="tag">CHECK PENDING</span></div><div class="ops-card-copy">Prüft, ob ein Proxychains-Binary und eine Konfiguration vorhanden sind. Es wird <strong>keine Route gestartet</strong> und kein externer Request gesendet.</div><div id="proxyDetails" class="ops-detail-list"><div><span>BINARY</span><strong>—</strong></div><div><span>CONFIG</span><strong>—</strong></div><div><span>MODE</span><strong>INSPECTION ONLY</strong></div></div><button id="proxyCheck" class="button button--ghost ops-run-button">◎ PROFILE PRÜFEN</button><div class="ops-safe-note"><span>✦</span> Für produktive Routing-Änderungen: separat authentifizierter Terminal-/Admin-Workflow.</div></section>
+            <section class="panel ops-card ops-card--mac"><div class="panel-heading"><div><p class="panel-kicker">03 / IDENTITY PREVIEW</p><h2>MAC CHANGER</h2></div><span class="tag tag--green">NO MUTATION</span></div><div class="ops-card-copy">Liest die aktuelle lokale MAC-Adresse und erzeugt eine <strong>lokal verwaltete Unicast-Vorschau</strong>. Die Adresse wird im Browser nicht verändert.</div><label class="ops-select-label">INTERFACE<select id="macInterface"></select></label><div id="macStatus" class="mac-status"><span>CURRENT MAC</span><strong>—</strong></div><button id="macPreview" class="button button--ghost ops-run-button">◇ ROTATION VORSCHAU</button><div id="macPreviewOutput" class="ops-result"><span class="ops-result-placeholder">Noch keine Vorschau. Das System bleibt unverändert.</span></div></section>
+          </div>
+          <section class="panel ops-playbook"><div class="panel-heading"><div><p class="panel-kicker">AUTOMATION RECIPE / SAFE BY DEFAULT</p><h2>READ-ONLY HEALTH SWEEP</h2></div><button id="opsSweep" class="button button--primary">✦ SWEEP AUSFÜHREN</button></div><div class="ops-playbook-flow"><div><span>01</span><strong>DISCOVER</strong><small>Tools und Interfaces erkennen</small></div><i>→</i><div><span>02</span><strong>INSPECT</strong><small>Proxychains und MAC lesen</small></div><i>→</i><div><span>03</span><strong>OBSERVE</strong><small>begrenzte Metadaten sammeln</small></div><i>→</i><div><span>04</span><strong>REPORT</strong><small>Ergebnis im Audit Trail</small></div></div><div id="opsSweepResult" class="ops-sweep-result"><span class="ops-result-placeholder">Der Sweep führt nur die drei erklärten, defensiven Checks aus.</span></div></section>
         </section>
 
         <section class="view-panel" data-view-panel="drift">

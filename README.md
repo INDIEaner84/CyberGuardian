@@ -13,6 +13,7 @@ CyberGuardian ist eine lokale Security-Suite mit einem neuen Browser-Cockpit fü
 - **Single Source of Do:** Pläne anlegen, Owner und Priorität setzen, Status durch den Workflow bewegen und jede Änderung im Mesh sichtbar machen.
 - **Agent-to-Agent-Handoffs:** Presence, Broadcast-Nachrichten und Kontextübergaben landen gemeinsam im lokalen Audit Trail.
 - **Defensives Honeypot-Lab:** virtuelle Decoys konfigurieren, aktivieren/deaktivieren, synthetische Testsignale einspeisen und zugehörige Incidents quittieren.
+- **Defense Ops:** ein begrenzter Packet Observatory im Stil einer Wireshark/tshark-Metadatenansicht, Proxychains-Installationscheck und MAC-Rotationsvorschau. Alles ist allowlisted, zeitlich begrenzt und erklärt die Grenze sichtbar.
 - **Persistenz ohne Zusatzdienst:** atomare JSON-Schreibvorgänge nach `~/.cyberguardian/control_plane.json`; der Browser spricht ausschließlich mit der lokalen Control Plane.
 - **Dependency-free Web-Start:** Das Cockpit läuft mit Python-Standardbibliothek. Die ältere CustomTkinter-/Dear-PyGui-Oberfläche bleibt für lokale Desktop-Workflows erhalten.
 
@@ -48,8 +49,13 @@ Der Server akzeptiert den Preview-Host, verwendet relative API-URLs und bindet s
 | `POST` | `/api/honeypots/<id>/toggle` | Decoy in Simulation aktivieren/pausieren |
 | `POST` | `/api/honeypots/<id>/simulate` | Klar markiertes, synthetisches Testsignal erfassen |
 | `POST` | `/api/incidents/<id>/ack` | Defensive Beobachtung quittieren |
+| `GET` | `/api/ops/overview` | Lokale Tool- und Interface-Fähigkeiten lesen |
+| `POST` | `/api/ops/capture` | Bounded Packet-Metadaten-Capture oder sichere Demo |
+| `POST` | `/api/ops/proxy-check` | Proxychains-Binary/Config prüfen, keine Route starten |
+| `GET` | `/api/ops/mac?interface=<name>` | MAC-Adresse read-only lesen |
+| `POST` | `/api/ops/mac-preview` | MAC-Rotation nur als Vorschau erzeugen |
 
-Die API führt keine Netzwerk- oder Systemaktion aus. Der Speicherort kann für Tests überschrieben werden:
+Die API führt keine beliebigen Shell-Befehle aus. Packet Capture ist auf wenige Sekunden und Metadatenzeilen begrenzt; MAC- und Proxychains-Aktionen verändern bzw. routen das System nicht. Der Speicherort kann für Tests überschrieben werden:
 
 ```bash
 CYBERGUARDIAN_STATE_FILE=/tmp/cyberguardian-state.json python3 server.py
@@ -66,6 +72,7 @@ CyberGuardian/
 │   └── app.js              # Interaktionen, Rendering und API-Client
 ├── core/
 │   ├── control_plane.py    # Single Source of Do / atomare Zustandsablage
+│   ├── defense_ops.py      # allowlisted Capture-, Proxy- und MAC-Inspektion
 │   └── ...                  # bestehende defensive Sicherheitsmodule
 ├── main.py                 # bisherige CustomTkinter-Oberfläche
 ├── main_anime.py           # bisherige Dear-PyGui-Oberfläche
