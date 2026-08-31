@@ -290,6 +290,9 @@ a { color: inherit; }
 .definition-label { display: block; margin-bottom: 4px; color: var(--red); font: 8px var(--mono); letter-spacing: .12em; }
 .definition-strip strong { display: block; color: var(--text); font: 700 16px/1.05 var(--display); }
 .definition-strip .button { flex: 0 0 auto; }
+.audience-strip { margin-top: -7px; border-color: rgba(112,243,242,.22); background: linear-gradient(90deg, rgba(12,32,36,.65), rgba(9,15,21,.62)); }
+.audience-strip strong { color: var(--cyan); font-size: 13px; }
+.audience-strip p { max-width: 430px; margin: 0; color: var(--muted); font: 10px/1.3 var(--display); }
 .view-heading h1 span { color: var(--red); }
 .heading-copy { margin: 12px 0 0; color: var(--muted); font-size: 15px; letter-spacing: .035em; }
 .heading-actions { display: flex; align-items: center; gap: 9px; flex: 0 0 auto; }
