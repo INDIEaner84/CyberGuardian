@@ -68,6 +68,21 @@ Der Tool Atlas vereinheitlicht die bestehenden Module:
 
 Jede Ausführung speichert Tool, Aktion, Zeit, Modus, Status, Ergebnis und Detaildaten im lokalen Audit Trail. Mit **SAFE AUDIT AUSFÜHREN** können die allowlisteten Beobachtungsaktionen gesammelt und nachvollziehbar geprüft werden.
 
+## Sinnvolle nächste Integrationen
+
+Diese Werkzeuge würden den defensiven Datenkern sinnvoll ergänzen. Sie sind als read-only oder Offline-Integrationen gedacht und nicht als automatische Gegenmaßnahmen:
+
+- **Zeek** — strukturierte Netzwerk-Metadaten und Verbindungslogs als Ergänzung zu einzelnen tshark-Paketen.
+- **Suricata im Alert-only-Modus** — IDS-Signaturen und erklärbare Alerts; kein IPS-Blocking aus dem Browser.
+- **YARA** — lokale Datei- und Artefaktprüfung mit expliziter Pfad-Allowlist und ohne Dateien zu verändern.
+- **osquery** — lesbare Endpoint-Inventur für Prozesse, Benutzer, Ports und Software mit festem Query-Katalog.
+- **ClamAV** — lokaler, nachvollziehbarer Malware-Scan als read-only Job.
+- **Sigma Replay** — synthetische oder importierte Logs offline gegen Detection-Regeln testen.
+- **Offline PCAP Import** — vorhandene Captures mit tshark analysieren, ohne live Datenverkehr zu starten.
+- **OpenTelemetry / Prometheus** — System- und Agentenmetriken in die gemeinsame Signaltemperatur übernehmen.
+
+Für jede Integration sollten Tool-ID, erlaubte Aktion, benötigte Berechtigung, Datenumfang, Timeout, Ergebnisformat und Audit-Eintrag vorab feststehen.
+
 ## Schnellstart: Browser-Cockpit
 
 ```bash

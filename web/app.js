@@ -553,17 +553,69 @@
   let lastMacPreview = null;
   let sweepRanAt = null;
 
+  function renderCaptureInsights() {
+    const packets = Array.isArray(lastCapture?.packets) ? lastCapture.packets : [];
+    const protocolSummary = $('#protocolSummary');
+    const protocolBars = $('#protocolBars');
+    const conversationSummary = $('#conversationSummary');
+    const conversationMap = $('#conversationMap');
+    const correlationFlow = $('#captureCorrelationFlow');
+    if (!protocolSummary || !protocolBars || !conversationSummary || !conversationMap || !correlationFlow) return;
+    if (!packets.length) {
+      protocolSummary.textContent = 'WAITING';
+      conversationSummary.textContent = 'WAITING';
+      protocolBars.innerHTML = '<span class="ops-result-placeholder">Noch keine Metadaten gelesen.</span>';
+      conversationMap.innerHTML = '<span class="ops-result-placeholder">Quelle → Ziel wird nach dem Capture gruppiert.</span>';
+      correlationFlow.innerHTML = '<span class="ops-result-placeholder">Ein Capture bildet noch keine Gegenmaßnahme. Erst beobachten, dann korrelieren.</span>';
+      return;
+    }
+
+    const protocols = new Map();
+    const conversations = new Map();
+    packets.forEach((packet) => {
+      const protocol = String(packet.protocol || 'UNKNOWN').toUpperCase();
+      protocols.set(protocol, (protocols.get(protocol) || 0) + 1);
+      const source = packet.source || '—';
+      const destination = packet.destination || '—';
+      const key = `${source} → ${destination}`;
+      conversations.set(key, (conversations.get(key) || 0) + 1);
+    });
+    const protocolRows = [...protocols.entries()].sort((a, b) => b[1] - a[1]);
+    const maxProtocol = Math.max(...protocolRows.map(([, count]) => count), 1);
+    protocolSummary.textContent = `${packets.length} ROWS / ${protocolRows.length} PROTOCOLS`;
+    protocolBars.innerHTML = protocolRows.slice(0, 5).map(([protocol, count]) => `<div class="protocol-bar"><span>${escapeHTML(protocol)}</span><i><b style="width:${Math.max(12, (count / maxProtocol) * 100)}%"></b></i><strong>${count}</strong></div>`).join('');
+
+    const conversationRows = [...conversations.entries()].sort((a, b) => b[1] - a[1]);
+    conversationSummary.textContent = `${conversationRows.length} FLOWS`;
+    conversationMap.innerHTML = conversationRows.slice(0, 4).map(([route, count]) => { const parts = route.split(' → '); return `<div class="conversation-row"><span>${escapeHTML(parts[0])}</span><i>→</i><span>${escapeHTML(parts.slice(1).join(' → '))}</span><b>${count}</b></div>`; }).join('');
+
+    const latestSignal = state?.honeypot_logs?.[0];
+    const latestIncident = state?.incidents?.find((incident) => incident.status === 'open') || state?.incidents?.[0];
+    const latestAudit = state?.activity?.find((event) => String(event.kind || '').includes('ops.capture'));
+    const decoy = state?.honeypots?.find((pot) => pot.id === latestSignal?.honeypot_id) || state?.honeypots?.[0];
+    const captureLabel = lastCapture.mode === 'simulation' ? 'SAFE DEMO' : String(lastCapture.engine || 'LOCAL').toUpperCase();
+    const chain = [
+      ['01 / PACKETS', `${packets.length} ROWS`, captureLabel],
+      ['02 / DECOY', decoy?.name || 'VIRTUAL NODE', decoy?.status === 'active' ? 'ACTIVE' : 'READY'],
+      ['03 / INCIDENT', latestIncident?.id || 'NO MATCH', latestIncident?.status ? String(latestIncident.status).toUpperCase() : 'CORRELATE'],
+      ['04 / AUDIT', latestAudit ? 'RECORDED' : 'READY', latestAudit ? formatTime(latestAudit.created_at, true) : 'AWAITING LOG']
+    ];
+    correlationFlow.innerHTML = chain.map(([label, value, meta], index) => `${index ? '<i>→</i>' : ''}<div class="capture-chain-node"><span>${escapeHTML(label)}</span><strong>${escapeHTML(value)}</strong><small>${escapeHTML(meta)}</small></div>`).join('');
+  }
+
   function renderCaptureResult() {
     const target = $('#captureResult');
     if (!target) return;
     if (!lastCapture) {
       target.innerHTML = '<span class="ops-result-placeholder">Bereit. Profil und Interface wählen, dann Capture starten.</span>';
+      renderCaptureInsights();
       return;
     }
     const demo = lastCapture.mode === 'simulation';
     const packets = Array.isArray(lastCapture.packets) ? lastCapture.packets : [];
     const rows = packets.slice(0, 30).map((packet) => `<div class="packet-row"><span>${escapeHTML(packet.time || '—')}</span><strong>${escapeHTML(packet.source || '—')}</strong><strong>${escapeHTML(packet.destination || '—')}</strong><b>${escapeHTML(packet.protocol || '—')}</b></div>`).join('');
     target.innerHTML = `<div class="ops-result-head"><span>${lastCapture.ok ? `${packets.length} METADATA ROWS` : 'CAPTURE NICHT VERFÜGBAR'}</span><small class="${demo ? 'is-demo' : ''}">${demo ? 'SAFE DEMO' : escapeHTML(String(lastCapture.engine || 'LOCAL').toUpperCase())}</small></div>${lastCapture.ok && packets.length ? `<div class="packet-table"><div class="packet-row packet-row--head"><span>TIME</span><span>SOURCE</span><span>DESTINATION</span><span>PROTO</span></div>${rows}</div>` : `<span class="ops-result-placeholder">${escapeHTML(lastCapture.notice || lastCapture.error || 'Keine Zeilen empfangen.')}</span>`}`;
+    renderCaptureInsights();
   }
 
   function renderOps() {
