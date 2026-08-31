@@ -16,6 +16,51 @@
   let toastTimer;
   let backgroundFrame;
   let driftFrame;
+  let activePrototype = 'nightwatch';
+  let selectedPrototype = null;
+
+  const prototypeVariants = {
+    nightwatch: {
+      index: 'DESIGN STUDY / 01 · ATMOSPHERE', title: 'NIGHTWATCH', accent: 'HUD',
+      description: 'Ein dichtes Neon-HUD für permanente Signalbeobachtung. Die Oberfläche lebt, ohne den Operator mit Aktionen zu überfahren.',
+      mode: 'SIMULATION ONLY', traits: ['NEON SIGNAL LAYER', 'PERMANENT READOUT', 'MOTION READY'],
+      context: 'ONE TRUTH. MANY GUARDIANS.', signal: 'SIGNAL 014 / OBSERVE', plan: 'EDGE-LAYER BASELINE',
+      initial: 'ORBIT trägt den Kontext. Klicke Agenten oder eine Interaktion an.',
+      agents: { ORBIT: 'ORBIT hält die Lage zusammen. Hover und Pulse machen Kontext sofort sichtbar.', SENTINEL: 'SENTINEL beobachtet die genehmigte Laborzone. Keine aktive Antwort.', KAI: 'KAI hält den virtuellen Decoy warm. Signale bleiben synthetisch.' },
+      actions: { context: 'CONTEXT LAYER: Der gemeinsame Plan bleibt direkt neben dem Signal sichtbar.', signal: 'SIGNAL TRACE: Eine animierte Spur verbindet Quelle, Decoy und Audit-Eintrag.', safe: 'SAFE PREVIEW: Beobachten ist vorbereitet. Es wird keine Systemaktion ausgeführt.' },
+      steps: { intent: 'INTENT: Ein defensives Ziel steht im Zentrum des Leitstands.', signal: 'SIGNAL: Ein synthetischer Hinweis erhält Quelle und Taktik.', audit: 'AUDIT: Ergebnis, Zeit und Verantwortlichkeit bleiben zurück.' }
+    },
+    orbit: {
+      index: 'DESIGN STUDY / 02 · COORDINATION', title: 'AGENT', accent: 'ORBIT',
+      description: 'Agenten kreisen um den gemeinsamen Control Plane. Zuständigkeit, Übergabe und Nähe zum Kontext werden räumlich lesbar.',
+      mode: 'MESH / SYNCHRONIZED', traits: ['SPATIAL CONTEXT', 'AGENT HANDOFFS', 'FOCUS ON OWNER'],
+      context: 'THE MESH SEES TOGETHER.', signal: 'HANDOFF 03 / SHARED', plan: 'EVIDENCE CHAIN',
+      initial: 'Wähle einen Knoten. Die Konstellation zeigt, wer den nächsten Schritt trägt.',
+      agents: { ORBIT: 'ORBIT ist der zentrale Kontextknoten. Er korreliert, statt allein zu handeln.', SENTINEL: 'SENTINEL liegt am äußeren Ring und markiert den Beobachtungsbereich.', KAI: 'KAI verbindet den Decoy mit dem Mesh. Seine Telemetrie bleibt im Labor.' },
+      actions: { context: 'AGENT CONTEXT: Ein Knoten wird zum aktiven Owner und zeigt seine Übergabe.', signal: 'SIGNAL TRACE: Der Signalpfad wandert vom äußeren Knoten zum SOT.', safe: 'SAFE PREVIEW: Eine Übergabe wird vorbereitet, nicht automatisch ausgeführt.' },
+      steps: { intent: 'INTENT: Der Owner setzt ein gemeinsames Ziel für das Mesh.', signal: 'SIGNAL: Der zuständige Agent meldet eine Beobachtung zurück.', audit: 'AUDIT: Handoff und Entscheidung werden gemeinsam gespeichert.' }
+    },
+    tactical: {
+      index: 'DESIGN STUDY / 03 · CLARITY', title: 'TACTICAL', accent: 'CONSOLE',
+      description: 'Ein ruhiger Operator-Look für Tagesbetrieb, Prioritäten und schnelle Entscheidungen — weniger Effekt, mehr Übersicht.',
+      mode: 'OPERATOR / READ ONLY', traits: ['FAST SCANNING', 'LOW COGNITIVE LOAD', 'KEYBOARD READY'],
+      context: 'CONTROL THE NEXT STEP.', signal: 'QUEUE 03 / TRIAGE', plan: 'EDGE-LAYER BASELINE',
+      initial: 'Filter, Status und nächste Aktion stehen im Vordergrund. Klicke einen Modus an.',
+      agents: { ORBIT: 'ORBIT: drei aktive Kontexte warten auf Korrelation.', SENTINEL: 'SENTINEL: genehmigte Zone ist im Beobachtungsfenster.', KAI: 'KAI: virtuelle Decoys liefern kontrollierte Testdaten.' },
+      actions: { context: 'CONTEXT FILTER: Nur die für den nächsten Operator-Schritt relevanten Daten bleiben offen.', signal: 'SIGNAL TRACE: Metadaten werden als kompakte Zeile statt als Animation gezeigt.', safe: 'SAFE PREVIEW: Die erlaubte Aktion wird vor dem Run mit Boundary angezeigt.' },
+      steps: { intent: 'INTENT: Priorität und Ziel sind als klare Queue sichtbar.', signal: 'SIGNAL: Beobachtung landet in einer filterbaren Zeile.', audit: 'AUDIT: Der Run erhält einen kompakten Nachweis.' }
+    },
+    theatre: {
+      index: 'DESIGN STUDY / 04 · WORKFLOW', title: 'INCIDENT', accent: 'THEATRE',
+      description: 'Der defensive Ablauf wird als Timeline erzählt: vom synthetischen Signal über die Korrelation bis zum Audit.',
+      mode: 'STORY / SYNTHETIC EVENT', traits: ['TIMELINE FIRST', 'EXPLAINABLE FLOW', 'DRILL MODE'],
+      context: 'FOLLOW THE EVIDENCE.', signal: 'SCENE 02 / CREDENTIAL PROBE', plan: 'HONEYPOT RELAY V2',
+      initial: 'Die Timeline ist die Hauptfigur. Klicke eine Szene oder einen Schritt an.',
+      agents: { ORBIT: 'Szene 01: ORBIT verbindet das Signal mit dem gemeinsamen Plan.', SENTINEL: 'Szene 02: SENTINEL ordnet die Beobachtung defensiv ein.', KAI: 'Szene 03: KAI bestätigt den virtuellen Decoy und seine Logs.' },
+      actions: { context: 'CONTEXT SCENE: Die beteiligten Rollen erscheinen direkt an der Timeline.', signal: 'SIGNAL TRACE: Der synthetische Event wird Schritt für Schritt nachvollziehbar.', safe: 'SAFE PREVIEW: Die Szene zeigt eine Entscheidung ohne reale Gegenmaßnahme.' },
+      steps: { intent: 'SZENE 01 / INTENT: Das Ziel und die erlaubte Grenze werden gesetzt.', signal: 'SZENE 02 / SIGNAL: Der virtuelle Decoy empfängt ein synthetisches Ereignis.', audit: 'SZENE 03 / AUDIT: Die Beweiskette schließt den defensiven Ablauf.' }
+    }
+  };
 
   const fallbackState = {
     schema: 'cyberguardian-control-plane-v1',
@@ -225,6 +270,106 @@
     stack.appendChild(item);
     $('#confirmToast').textContent = message;
     window.setTimeout(() => item.remove(), 4300);
+  }
+
+  function getStoredPrototype() {
+    try {
+      const value = window.localStorage.getItem('cyberguardian.prototypeDirection');
+      return Object.prototype.hasOwnProperty.call(prototypeVariants, value) ? value : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function renderPrototypeSelection() {
+    $$('.design-variant').forEach((button) => button.classList.toggle('is-selected', button.dataset.designVariant === selectedPrototype));
+    const status = $('#prototypeSelectionStatus');
+    if (!status) return;
+    status.classList.toggle('is-locked', Boolean(selectedPrototype));
+    status.textContent = selectedPrototype ? `LOCKED / ${prototypeVariants[selectedPrototype].title} ${prototypeVariants[selectedPrototype].accent}` : 'NO DIRECTION LOCKED';
+  }
+
+  function announcePrototype(message) {
+    const feedback = $('#previewFeedback');
+    if (feedback) feedback.textContent = message;
+    $('#confirmToast').textContent = message;
+  }
+
+  function resetPrototypeControls() {
+    $$('.preview-agent').forEach((button, index) => button.classList.toggle('preview-agent--active', index === 0));
+    $$('.preview-action').forEach((button, index) => button.classList.toggle('preview-action--active', index === 0));
+    $$('.preview-step').forEach((button, index) => button.classList.toggle('preview-step--active', index === 0));
+  }
+
+  function renderPrototypePreview(name) {
+    const config = prototypeVariants[name] || prototypeVariants.nightwatch;
+    activePrototype = name;
+    const stage = $('#prototypeStage');
+    stage.dataset.variant = name;
+    $('#prototypePreviewKicker').textContent = config.index;
+    const title = $('#prototypePreviewTitle');
+    title.childNodes[0].textContent = `${config.title} `;
+    $('span', title).textContent = config.accent;
+    $('#prototypePreviewDescription').textContent = config.description;
+    $('#previewStageMode').textContent = config.mode;
+    $('#previewContextTitle').textContent = config.context;
+    $('#previewContextSignal').textContent = config.signal;
+    $('#previewPlanTitle').textContent = config.plan;
+    $('#prototypeTraitOne').textContent = config.traits[0];
+    $('#prototypeTraitTwo').textContent = config.traits[1];
+    $('#prototypeTraitThree').textContent = config.traits[2];
+    $('#prototypeSelectButton').textContent = selectedPrototype === name ? 'DIRECTION LOCKED ✓' : 'USE THIS DIRECTION ↗';
+    resetPrototypeControls();
+    announcePrototype(config.initial);
+  }
+
+  function openPrototypePreview(name) {
+    if (!prototypeVariants[name]) return;
+    renderPrototypePreview(name);
+    $('#prototypeBackdrop').classList.remove('is-hidden');
+    document.body.classList.add('prototype-open');
+    window.setTimeout(() => $('#prototypeSelectButton')?.focus(), 40);
+  }
+
+  function closePrototypePreview() {
+    $('#prototypeBackdrop').classList.add('is-hidden');
+    document.body.classList.remove('prototype-open');
+  }
+
+  function lockPrototypeDirection() {
+    selectedPrototype = activePrototype;
+    try { window.localStorage.setItem('cyberguardian.prototypeDirection', selectedPrototype); } catch (_) { /* optional preference */ }
+    renderPrototypeSelection();
+    $('#prototypeSelectButton').textContent = 'DIRECTION LOCKED ✓';
+    announcePrototype(`${prototypeVariants[activePrototype].title} ${prototypeVariants[activePrototype].accent} ist als bevorzugte Richtung markiert. Produktionsdesign bleibt unverändert.`);
+  }
+
+  function clearPrototypeDirection() {
+    selectedPrototype = null;
+    try { window.localStorage.removeItem('cyberguardian.prototypeDirection'); } catch (_) { /* optional preference */ }
+    renderPrototypeSelection();
+    if ($('#prototypeSelectButton')) $('#prototypeSelectButton').textContent = 'USE THIS DIRECTION ↗';
+    announcePrototype('Auswahl gelöscht. Keine Designrichtung ist festgelegt.');
+  }
+
+  function handlePrototypeAgent(agent) {
+    const config = prototypeVariants[activePrototype];
+    $$('.preview-agent').forEach((button) => button.classList.toggle('preview-agent--active', button.dataset.previewAgent === agent));
+    $('#previewContextTitle').textContent = `${agent} / SHARED CONTEXT`;
+    $('#previewContextSignal').textContent = `HANDOFF / ${agent}`;
+    announcePrototype(config.agents[agent] || `${agent} ist im gemeinsamen Mesh sichtbar.`);
+  }
+
+  function handlePrototypeAction(action) {
+    const config = prototypeVariants[activePrototype];
+    $$('.preview-action').forEach((button) => button.classList.toggle('preview-action--active', button.dataset.previewAction === action));
+    announcePrototype(config.actions[action] || 'Interaktion für diese Richtung ist bereit.');
+  }
+
+  function handlePrototypeStep(step) {
+    const config = prototypeVariants[activePrototype];
+    $$('.preview-step').forEach((button) => button.classList.toggle('preview-step--active', button.dataset.previewStep === step));
+    announcePrototype(config.steps[step] || 'Workflow-Schritt ausgewählt.');
   }
 
   function renderLandingState() {
@@ -685,6 +830,22 @@
     }
   }
 
+  function startPrototypeInteraction() {
+    const stage = $('#prototypeStage');
+    if (!stage || !motionPreferred) return;
+    stage.addEventListener('pointermove', (event) => {
+      const bounds = stage.getBoundingClientRect();
+      const x = (event.clientX - bounds.left) / bounds.width - .5;
+      const y = (event.clientY - bounds.top) / bounds.height - .5;
+      stage.style.setProperty('--preview-shift-x', `${(x * 8).toFixed(2)}px`);
+      stage.style.setProperty('--preview-shift-y', `${(y * -5).toFixed(2)}px`);
+    });
+    stage.addEventListener('pointerleave', () => {
+      stage.style.removeProperty('--preview-shift-x');
+      stage.style.removeProperty('--preview-shift-y');
+    });
+  }
+
   function startLandingInteraction() {
     if (!motionPreferred) return;
     const visual = $('.hero-visual');
@@ -783,7 +944,15 @@
 
   function bindEvents() {
     $$('[data-enter]').forEach((element) => element.addEventListener('click', (event) => { event.preventDefault(); enterCockpit(element.dataset.enter); }));
-    $('[data-scroll-prototypes]')?.addEventListener('click', () => $('#prototypes').scrollIntoView({ behavior: motionPreferred ? 'smooth' : 'auto' }));
+    $$('[data-design-variant]').forEach((button) => button.addEventListener('click', () => openPrototypePreview(button.dataset.designVariant)));
+    $('#clearPrototypeSelection')?.addEventListener('click', clearPrototypeDirection);
+    $('#prototypeSelectButton')?.addEventListener('click', lockPrototypeDirection);
+    $('[data-close-prototype]')?.addEventListener('click', closePrototypePreview);
+    $('#prototypeBackdrop')?.addEventListener('click', (event) => { if (event.target === $('#prototypeBackdrop')) closePrototypePreview(); });
+    $$('.preview-agent').forEach((button) => button.addEventListener('click', () => handlePrototypeAgent(button.dataset.previewAgent)));
+    $$('.preview-action').forEach((button) => button.addEventListener('click', () => handlePrototypeAction(button.dataset.previewAction)));
+    $$('.preview-step').forEach((button) => button.addEventListener('click', () => handlePrototypeStep(button.dataset.previewStep)));
+    $('[data-scroll-prototypes]')?.addEventListener('click', () => $('#design-lab')?.scrollIntoView({ behavior: motionPreferred ? 'smooth' : 'auto' }));
     $('#backToStart')?.addEventListener('click', () => { $('#appView').classList.add('is-hidden'); $('#startScreen').classList.remove('is-hidden'); window.scrollTo({ top: 0, behavior: 'auto' }); });
     $$('.nav-item').forEach((button) => button.addEventListener('click', () => setView(button.dataset.view)));
     $$('[data-view-link]').forEach((button) => button.addEventListener('click', () => { enterCockpit(currentView); setView(button.dataset.viewLink); }));
@@ -800,7 +969,7 @@
     });
     $$('[data-close-modal]').forEach((button) => button.addEventListener('click', closeModal));
     $('#modalBackdrop')?.addEventListener('click', (event) => { if (event.target === $('#modalBackdrop')) closeModal(); });
-    document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeModal(); });
+    document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { if (!$('#prototypeBackdrop').classList.contains('is-hidden')) closePrototypePreview(); else closeModal(); } });
     document.addEventListener('click', (event) => {
       const planButton = event.target.closest('[data-cycle-plan]');
       if (planButton) { event.preventDefault(); cyclePlan(planButton.dataset.cyclePlan); return; }
@@ -847,8 +1016,11 @@
   }
 
   async function boot() {
+    selectedPrototype = getStoredPrototype();
+    renderPrototypeSelection();
     bindEvents();
     updateClock(); window.setInterval(updateClock, 1000);
+    startPrototypeInteraction();
     startLandingInteraction();
     startBackgroundCanvas();
     await loadState(true);

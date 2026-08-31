@@ -41,7 +41,7 @@
             <span class="button-icon">↳</span> COCKPIT ÖFFNEN
           </button>
           <button class="text-button" data-scroll-prototypes>
-            PROTOTYPEN ANSEHEN <span>↓</span>
+            DESIGN LAB ÖFFNEN <span>↓</span>
           </button>
         </div>
         <div class="hero-safety">
@@ -87,7 +87,7 @@
           <p class="eyebrow"><span class="eyebrow-line"></span>START MENU / SELECT A PROTOTYPE</p>
           <h2>WIE SOLL SICH<br><span>DEIN LEITSTAND</span> ANFÜHLEN?</h2>
         </div>
-        <p>Sechs Interaktionsprototypen. Ein gemeinsamer Datenkern. Wähle einen Einstieg — du kannst jederzeit im Cockpit wechseln.</p>
+        <p>Sechs Cockpit-Einstiege. Vier Designrichtungen. Ein gemeinsamer Datenkern. Wähle einen Einstieg — du kannst jederzeit im Cockpit wechseln.</p>
       </div>
 
       <div class="prototype-grid">
@@ -134,6 +134,37 @@
           <span class="prototype-card-footer"><b>UNIFIED CONTROL</b><i>↗</i></span>
         </button>
       </div>
+
+      <section class="design-lab" id="design-lab" aria-labelledby="designLabTitle">
+        <div class="design-lab-heading">
+          <div><p class="eyebrow"><span class="eyebrow-line"></span>DESIGN LAB / CHOOSE A DIRECTION</p><h3 id="designLabTitle">FOUR WAYS TO <span>GUARD.</span></h3></div>
+          <span id="prototypeSelectionStatus" class="design-lab-status">NO DIRECTION LOCKED</span>
+        </div>
+        <p class="design-lab-intro">Live UI studies für die nächste CyberGuardian-Runde. Der Datenkern bleibt identisch — nur Atmosphäre, Hierarchie und Interaktion werden hier gegeneinander getestet.</p>
+        <div class="design-variant-grid">
+          <button class="design-variant" data-design-variant="nightwatch" type="button">
+            <span class="variant-thumb variant-thumb--nightwatch" aria-hidden="true"><i></i><b></b><em></em><small>01 / SIGNAL DESK</small></span>
+            <span class="design-variant-copy"><strong>NIGHTWATCH HUD</strong><small>Dichtes Neon-HUD mit Telemetrie, Scanlines und einer permanenten Signalbewegung.</small></span>
+            <span class="design-variant-foot"><b>ATMOSPHERE</b><i>PREVIEW ↗</i></span>
+          </button>
+          <button class="design-variant" data-design-variant="orbit" type="button">
+            <span class="variant-thumb variant-thumb--orbit" aria-hidden="true"><i></i><b></b><em></em><small>02 / AGENT MESH</small></span>
+            <span class="design-variant-copy"><strong>AGENT ORBIT</strong><small>Agenten kreisen um den gemeinsamen Control Plane. Kontext wird räumlich sichtbar.</small></span>
+            <span class="design-variant-foot"><b>COORDINATION</b><i>PREVIEW ↗</i></span>
+          </button>
+          <button class="design-variant" data-design-variant="tactical" type="button">
+            <span class="variant-thumb variant-thumb--tactical" aria-hidden="true"><i></i><b></b><em></em><small>03 / OPERATOR VIEW</small></span>
+            <span class="design-variant-copy"><strong>TACTICAL CONSOLE</strong><small>Ruhiger, klarer SOC-Look für Entscheidungen, Filter, Shortcuts und Tagesbetrieb.</small></span>
+            <span class="design-variant-foot"><b>CLARITY</b><i>PREVIEW ↗</i></span>
+          </button>
+          <button class="design-variant" data-design-variant="theatre" type="button">
+            <span class="variant-thumb variant-thumb--theatre" aria-hidden="true"><i></i><b></b><em></em><small>04 / SIGNAL STORY</small></span>
+            <span class="design-variant-copy"><strong>INCIDENT THEATRE</strong><small>Defensive Abläufe als Timeline: vom synthetischen Signal bis zum Audit-Eintrag.</small></span>
+            <span class="design-variant-foot"><b>WORKFLOW</b><i>PREVIEW ↗</i></span>
+          </button>
+        </div>
+        <div class="design-lab-note"><span class="status-dot"></span><p><strong>WÄHLE ERST DIE RICHTUNG.</strong> Eine Markierung verändert noch nicht das Produktionsdesign. Wir kombinieren danach die stärksten Teile.</p><button id="clearPrototypeSelection" class="text-button" type="button">AUSWAHL LÖSCHEN ↺</button></div>
+      </section>
     </section>
 
     <footer class="landing-footer">
@@ -317,6 +348,46 @@
         </section>
       </main>
     </div>
+  </div>
+
+  <div id="prototypeBackdrop" class="prototype-backdrop is-hidden" role="dialog" aria-modal="true" aria-labelledby="prototypePreviewTitle">
+    <section class="prototype-modal">
+      <header class="prototype-modal-head">
+        <div><p id="prototypePreviewKicker" class="eyebrow eyebrow--small">DESIGN STUDY / 01</p><h2 id="prototypePreviewTitle">NIGHTWATCH <span>HUD</span></h2><p id="prototypePreviewDescription" class="prototype-modal-copy">Ein dichtes Neon-HUD für permanente Signalbeobachtung.</p></div>
+        <button class="modal-close" data-close-prototype aria-label="Prototype Preview schließen">×</button>
+      </header>
+      <div id="prototypeStage" class="prototype-preview-stage" data-variant="nightwatch">
+        <div class="preview-topline"><span>CYBERGUARDIAN / LIVE STUDY</span><span><i></i><b id="previewStageMode">SIMULATION ONLY</b></span><span id="previewStageClock">08:41:16</span></div>
+        <div class="preview-layout">
+          <aside class="preview-rail">
+            <div class="preview-brand"><span>CG</span><strong>SOT-01</strong></div>
+            <span class="preview-rail-label">AGENT MESH</span>
+            <button class="preview-agent preview-agent--active" data-preview-agent="ORBIT" type="button"><b>01</b><span><strong>ORBIT</strong><small>TRIAGE / 92%</small></span><i></i></button>
+            <button class="preview-agent" data-preview-agent="SENTINEL" type="button"><b>02</b><span><strong>SENTINEL</strong><small>EXPOSURE / 87%</small></span><i></i></button>
+            <button class="preview-agent" data-preview-agent="KAI" type="button"><b>03</b><span><strong>KAI</strong><small>DECEPTION / 78%</small></span><i></i></button>
+            <div class="preview-rail-foot"><span>SAFE RAIL</span><strong>ON</strong></div>
+          </aside>
+          <div class="preview-canvas">
+            <div class="preview-canvas-heading"><div><span>SHARED CONTEXT / NODE 7F-A</span><strong id="previewContextTitle">ONE TRUTH. MANY GUARDIANS.</strong></div><em id="previewContextSignal">SIGNAL 014 / OBSERVE</em></div>
+            <div class="preview-surface">
+              <div class="preview-grid-glow"></div>
+              <div class="preview-sun"></div>
+              <div class="preview-scan-line"></div>
+              <div class="preview-orbit"><i class="preview-orbit-node preview-orbit-node--one">O</i><i class="preview-orbit-node preview-orbit-node--two">S</i><i class="preview-orbit-node preview-orbit-node--three">K</i><b>SOT</b></div>
+              <div class="preview-readout preview-readout--one"><span>THREAT TEMP</span><strong>OBSERVE</strong></div>
+              <div class="preview-readout preview-readout--two"><span>INTENT FLOW</span><strong>84%</strong></div>
+              <div class="preview-readout preview-readout--three"><span>EVIDENCE</span><strong>LOCAL</strong></div>
+              <div class="preview-signal-pulse"></div>
+            </div>
+            <div class="preview-plan-strip"><span>ACTIVE INTENT</span><strong id="previewPlanTitle">EDGE-LAYER BASELINE</strong><em>68%</em><i><b></b></i></div>
+            <div class="preview-interaction-row"><button class="preview-action preview-action--active" data-preview-action="context" type="button">AGENT CONTEXT</button><button class="preview-action" data-preview-action="signal" type="button">SIGNAL TRACE</button><button class="preview-action" data-preview-action="safe" type="button">SAFE PREVIEW</button></div>
+          </div>
+        </div>
+        <div class="preview-timeline"><button class="preview-step preview-step--active" data-preview-step="intent" type="button"><b>01</b><span>INTENT</span></button><i>→</i><button class="preview-step" data-preview-step="signal" type="button"><b>02</b><span>SIGNAL</span></button><i>→</i><button class="preview-step" data-preview-step="audit" type="button"><b>03</b><span>AUDIT</span></button><i>↻</i></div>
+        <div class="preview-feedback" id="previewFeedback" aria-live="polite">ORBIT trägt den Kontext. Klicke Agenten oder eine Interaktion an.</div>
+      </div>
+      <footer class="prototype-modal-foot"><div><span class="prototype-trait" id="prototypeTraitOne">NEON SIGNAL LAYER</span><span class="prototype-trait" id="prototypeTraitTwo">PERMANENT READOUT</span><span class="prototype-trait" id="prototypeTraitThree">MOTION READY</span></div><button id="prototypeSelectButton" class="button button--primary" type="button">USE THIS DIRECTION ↗</button></footer>
+    </section>
   </div>
 
   <div id="modalBackdrop" class="modal-backdrop is-hidden">

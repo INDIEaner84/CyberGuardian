@@ -33,6 +33,17 @@ Das Browser-Cockpit enthält ein Startmenü mit sechs Einstiegen:
 
 Die visuelle Sprache nutzt originales CSS/Canvas-HUD-Design: roter Sun-Core, Neon-Signalringe, Scanlines, Datenraster, Agenten-Konstellation und bewegte Signalpartikel. Es werden keine fremden Figuren oder geschützten Assets verwendet.
 
+### Design Lab: Varianten vergleichen
+
+Unterhalb der sechs Cockpit-Einstiege befindet sich ein lokales **Design Lab**. Dort lassen sich vier visuelle Richtungen als Live-Prototyp öffnen:
+
+- **Nightwatch HUD** — atmosphärisches Neon-HUD mit permanentem Readout.
+- **Agent Orbit** — räumlicher Agenten-Mesh mit sichtbaren Handoffs.
+- **Tactical Console** — klare Operator-Konsole mit geringer kognitiver Last.
+- **Incident Theatre** — Timeline-first-Ansicht für nachvollziehbare defensive Abläufe.
+
+Agenten, Workflow-Schritte und Safe-Action-Previews sind im Prototyp anklickbar. **USE THIS DIRECTION** markiert eine lokale Präferenz in `localStorage`; die Produktionsoberfläche und der Control Plane werden dadurch nicht verändert. Erst nach einer bewussten Entscheidung werden die ausgewählten Gestaltungselemente in das eigentliche Cockpit übernommen.
+
 ## Bekannte Tools im gemeinsamen Tool Atlas
 
 Der Tool Atlas vereinheitlicht die bestehenden Module:
