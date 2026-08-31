@@ -301,6 +301,45 @@
     $$('.preview-step').forEach((button, index) => button.classList.toggle('preview-step--active', index === 0));
   }
 
+  const previewPacketSample = [
+    { time: '+0.00s', source: '192.0.2.10', source_port: '51834', destination: '192.0.2.1', destination_port: '443', protocol: 'TCP', synthetic: true },
+    { time: '+0.42s', source: '198.51.100.7', source_port: '41201', destination: '203.0.113.5', destination_port: '53', protocol: 'DNS', synthetic: true },
+    { time: '+0.84s', source: '203.0.113.5', source_port: '55422', destination: '198.51.100.7', destination_port: '443', protocol: 'HTTPS', synthetic: true }
+  ];
+
+  function renderPreviewPackets(packets = previewPacketSample, label = 'SAFE SAMPLE') {
+    const target = $('#previewPacketFeed');
+    if (!target) return;
+    const rows = Array.isArray(packets) ? packets.slice(0, 6) : [];
+    const header = '<div class="preview-packet-row preview-packet-row--head"><span>TIME</span><span>SOURCE</span><i></i><span>DESTINATION</span><b>PROTO</b></div>';
+    const content = rows.map((packet) => `<div class="preview-packet-row"><span>${escapeHTML(packet.time || '—')}</span><span>${escapeHTML(packet.source || '—')}${packet.source_port ? `:${escapeHTML(packet.source_port)}` : ''}</span><i>→</i><span>${escapeHTML(packet.destination || '—')}${packet.destination_port ? `:${escapeHTML(packet.destination_port)}` : ''}</span><b>${escapeHTML(packet.protocol || 'UNKNOWN')}</b></div>`).join('');
+    target.innerHTML = `<div class="preview-packet-label"><span>${escapeHTML(label)}</span><small>HEADER METADATA / NO PAYLOAD</small></div>${content ? header + content : '<div class="preview-packet-empty">NO METADATA ROWS / SAFE BOUNDARY HELD</div>'}`;
+  }
+
+  async function capturePreviewMetadata() {
+    const button = $('#previewCaptureButton');
+    if (!button) return;
+    button.disabled = true;
+    button.textContent = 'CAPTURING …';
+    try {
+      const result = await request('/api/ops/capture', {
+        method: 'POST',
+        body: JSON.stringify({ interface: 'lo', preset: 'metadata', duration: 3, limit: 6 })
+      });
+      const label = result.mode === 'simulation' ? 'SAFE DEMO / SYNTHETIC' : `${String(result.engine || 'LOCAL').toUpperCase()} / LIVE METADATA`;
+      renderPreviewPackets(result.packets || [], label);
+      const first = result.packets?.[0];
+      if (first) $('#previewContextSignal').textContent = `${first.protocol || 'PACKET'} / ${result.mode === 'simulation' ? 'SYNTHETIC' : 'OBSERVE'}`;
+      announcePrototype(result.notice || 'Packet-Metadaten gelesen. Kein Payload wurde angefordert.');
+    } catch (error) {
+      renderPreviewPackets(previewPacketSample, 'SAFE SAMPLE / OFFLINE');
+      announcePrototype('Live Capture nicht erreichbar. Sichere Beispieldaten bleiben sichtbar — kein Request wurde weitergeleitet.');
+    } finally {
+      button.disabled = false;
+      button.textContent = 'READ METADATA ↯';
+    }
+  }
+
   function renderPrototypePreview(name) {
     const config = prototypeVariants[name] || prototypeVariants.nightwatch;
     activePrototype = name;
@@ -320,6 +359,9 @@
     $('#prototypeTraitThree').textContent = config.traits[2];
     $('#prototypeSelectButton').textContent = selectedPrototype === name ? 'DIRECTION LOCKED ✓' : 'USE THIS DIRECTION ↗';
     resetPrototypeControls();
+    renderPreviewPackets();
+    const now = new Date();
+    $('#previewStageClock').textContent = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'UTC' });
     announcePrototype(config.initial);
   }
 
@@ -947,6 +989,7 @@
     $$('[data-design-variant]').forEach((button) => button.addEventListener('click', () => openPrototypePreview(button.dataset.designVariant)));
     $('#clearPrototypeSelection')?.addEventListener('click', clearPrototypeDirection);
     $('#prototypeSelectButton')?.addEventListener('click', lockPrototypeDirection);
+    $('#previewCaptureButton')?.addEventListener('click', capturePreviewMetadata);
     $('[data-close-prototype]')?.addEventListener('click', closePrototypePreview);
     $('#prototypeBackdrop')?.addEventListener('click', (event) => { if (event.target === $('#prototypeBackdrop')) closePrototypePreview(); });
     $$('.preview-agent').forEach((button) => button.addEventListener('click', () => handlePrototypeAgent(button.dataset.previewAgent)));

@@ -155,6 +155,7 @@ class DefenseOps:
         if engine == "tshark":
             args = [
                 "tshark",
+                "-p",
                 "-i", interface,
                 "-a", f"duration:{duration}",
                 "-c", str(limit),
@@ -171,7 +172,7 @@ class DefenseOps:
             if spec["bpf"]:
                 args.extend(["-f", " ".join(spec["bpf"])])
             return args
-        args = ["tcpdump", "-nn", "-l", "-tt", "-c", str(limit), "-i", interface]
+        args = ["tcpdump", "-p", "-nn", "-l", "-tt", "-c", str(limit), "-i", interface]
         args.extend(spec["bpf"])
         return args
 

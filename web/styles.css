@@ -756,6 +756,22 @@ body.prototype-open { overflow: hidden; }
 .preview-plan-strip em { color: var(--orange); font-style: normal; }
 .preview-plan-strip > i { grid-column: 1 / -1; height: 3px; background: rgba(112,243,242,.12); }
 .preview-plan-strip > i b { display: block; width: 68%; height: 100%; background: var(--orange); box-shadow: 0 0 8px var(--orange); }
+.preview-packet-panel { margin-top: 11px; border: 1px solid rgba(112,243,242,.2); background: rgba(3,8,13,.64); }
+.preview-packet-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 7px 8px; border-bottom: 1px solid rgba(112,243,242,.15); }
+.preview-packet-head > span { color: var(--preview-accent); font: 7px var(--mono); letter-spacing: .07em; }
+.preview-packet-head > span i { display: inline-block; width: 5px; height: 5px; margin-right: 5px; border-radius: 50%; background: var(--preview-accent); box-shadow: 0 0 8px var(--preview-accent); }
+.preview-packet-head .preview-action { padding: 5px 7px; font-size: 7px; white-space: nowrap; }
+.preview-packet-feed { padding: 4px 8px; }
+.preview-packet-label { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0 6px; color: var(--preview-accent); font: 7px var(--mono); letter-spacing: .05em; }
+.preview-packet-label small { color: var(--dim); font-size: 6px; }
+.preview-packet-row { display: grid; grid-template-columns: 50px minmax(0, .8fr) 12px minmax(0, .8fr) 45px; gap: 6px; align-items: center; min-height: 24px; border-bottom: 1px solid rgba(129,166,180,.09); color: var(--muted); font: 7px var(--mono); }
+.preview-packet-row:last-child { border-bottom: 0; }
+.preview-packet-row > span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.preview-packet-row > b { overflow: hidden; color: var(--preview-accent); font-weight: 400; white-space: nowrap; text-overflow: ellipsis; }
+.preview-packet-row > i { color: var(--preview-hot); font-style: normal; text-align: center; }
+.preview-packet-row--head { min-height: 18px; color: var(--dim); font-size: 6px; }
+.preview-packet-row--head > i { visibility: hidden; }
+.preview-packet-empty { padding: 8px 0; color: var(--dim); font: 8px var(--mono); }
 .preview-interaction-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 13px; }
 .preview-action, .preview-step { border: 1px solid rgba(129,166,180,.26); background: rgba(7,13,19,.7); color: var(--muted); font: 8px var(--mono); letter-spacing: .06em; }
 .preview-action { padding: 7px 9px; }
@@ -823,6 +839,12 @@ body.prototype-open { overflow: hidden; }
 .prototype-preview-stage[data-variant="theatre"] .preview-orbit-node--three { left: -6px; right: auto; bottom: 14px; border-color: var(--cyan); color: var(--cyan); }
 .prototype-preview-stage[data-variant="theatre"] .preview-timeline { border-top-color: rgba(255,155,82,.25); }
 .prototype-preview-stage[data-variant="theatre"] .preview-step--active, .prototype-preview-stage[data-variant="theatre"] .preview-step:hover { border-color: var(--orange); }
+.prototype-preview-stage[data-variant="orbit"] .preview-packet-panel { border-color: rgba(241,104,212,.32); }
+.prototype-preview-stage[data-variant="orbit"] .preview-packet-head { border-bottom-color: rgba(241,104,212,.2); }
+.prototype-preview-stage[data-variant="tactical"] .preview-packet-panel { border-color: rgba(140,240,173,.3); border-radius: 1px; }
+.prototype-preview-stage[data-variant="tactical"] .preview-packet-row { font-size: 7px; }
+.prototype-preview-stage[data-variant="theatre"] .preview-packet-panel { border-color: rgba(255,155,82,.3); }
+.prototype-preview-stage[data-variant="theatre"] .preview-packet-row > i { color: var(--orange); }
 
 /* Toasts and modal */
 .toast-stack { position: fixed; right: 24px; bottom: 24px; z-index: 40; display: flex; flex-direction: column; align-items: end; gap: 8px; pointer-events: none; }
@@ -1089,6 +1111,10 @@ body.prototype-open { overflow: hidden; }
   .preview-canvas-heading strong { font-size: 27px; }
   .preview-plan-strip { grid-template-columns: 1fr auto; gap: 6px; }
   .preview-plan-strip > span { grid-column: 1 / -1; }
+  .preview-packet-head { align-items: start; flex-direction: column; }
+  .preview-packet-head .preview-action { align-self: start; }
+  .preview-packet-label small { display: none; }
+  .preview-packet-row { grid-template-columns: 42px minmax(0,1fr) 8px minmax(0,1fr) 38px; gap: 3px; font-size: 6px; }
   .preview-interaction-row { gap: 4px; }
   .preview-action { flex: 1; min-width: 0; padding-inline: 5px; font-size: 7px; }
   .preview-timeline { gap: 4px; padding-inline: 10px; }
