@@ -6,6 +6,10 @@ CyberGuardian ist eine lokale, defensive Security-Suite für Menschen und spezia
 
 > **Projektseite:** <https://indieaner84.github.io/CyberGuardian/> · Die statische GitHub-Pages-Seite erklärt Mission, Architektur, Packet Observatory, Tool Atlas und Safety Scope.
 
+## GitHub Pages veröffentlichen
+
+Die statische Projektseite liegt in `docs/` und benötigt keinen Python-Server. In GitHub unter **Settings → Pages** als Quelle **Deploy from a branch** wählen, den Branch `arena/01a053ed-cyberguardian` (nach dem Merge alternativ `main`) und den Ordner `/docs` auswählen. Danach ist die Seite unter `https://indieaner84.github.io/CyberGuardian/` erreichbar.
+
 Der zentrale **Control Plane** ist die **Single Source of Truth**: Eine Absicht wird einmal als Plan angelegt, von zuständigen Agenten übernommen, mit sicheren Beobachtungen angereichert und als nachvollziehbarer nächster Schritt an das Team verteilt. So bleibt sichtbar, wer was vorhat, warum es passiert, welcher Status gilt und was als Nächstes zu tun ist.
 
 ## Allgemeine Projektbeschreibung
