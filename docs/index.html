@@ -23,6 +23,7 @@
     </a>
     <nav class="site-nav" aria-label="Projekt-Navigation">
       <a href="#mission">MISSION</a>
+      <a href="#app-previews">APP PREVIEWS</a>
       <a href="#observatory">OBSERVATORY</a>
       <a href="#architecture">ARCHITECTURE</a>
       <a href="#safety">SAFETY</a>
@@ -66,8 +67,13 @@
       <span><i class="pulse-dot"></i> DEFENSIVE MODE</span><b>SHARED CONTEXT</b><span>WIRESHARK METADATA</span><b>NO PAYLOAD</b><span>HONEYPOT LAB</span><b>NO LISTENER</b><span id="ribbonStatus">SOT ONLINE</span>
     </div>
 
+    <section class="gallery page-wrap section-block reveal" id="app-previews">
+      <div class="section-heading"><div><div class="section-kicker"><span>01</span> APP PREVIEWS / REPOSITORY IMAGES</div><h2>SEE THE <span>CONTROL PLANE.</span></h2></div><p>Statische Interface-Aufnahmen aus den aktuellen Prototypen — als SVG im Repository und direkt in der GitHub-Projektseite sichtbar.</p></div>
+      <div class="gallery-grid"><figure class="gallery-figure gallery-figure--wide"><img src="./screenshots/design-lab.svg" alt="Design Lab mit vier CyberGuardian-Designrichtungen"><figcaption><span>DESIGN LAB / 04 DIRECTIONS</span><strong>Wähle die visuelle Richtung, bevor sie Produktionsdesign wird.</strong></figcaption></figure><figure class="gallery-figure"><img src="./screenshots/command-deck.svg" alt="Command Deck mit Agenten, Plänen und Safety Rail"><figcaption><span>COMMAND DECK / SHARED CONTEXT</span><strong>Ein Lagebild. Ein nächster Schritt. Alle Agenten informiert.</strong></figcaption></figure><figure class="gallery-figure"><img src="./screenshots/packet-observatory.svg" alt="Packet Observatory mit Wireshark-Metadaten und Audit-Kette"><figcaption><span>DEFENSE OPS / PACKET OBSERVATORY</span><strong>Header-Metadaten werden zu sicherem Kontext.</strong></figcaption></figure></div>
+    </section>
+
     <section class="mission page-wrap section-block reveal" id="mission">
-      <div class="section-kicker"><span>01</span> PROJECT OVERVIEW / WHY IT EXISTS</div>
+      <div class="section-kicker"><span>02</span> PROJECT OVERVIEW / WHY IT EXISTS</div>
       <div class="mission-layout">
         <div>
           <h2>THE <span>SHARED NERVE</span><br>FOR HUMAN + AGENT DEFENSE.</h2>
@@ -83,7 +89,7 @@
     </section>
 
     <section class="observatory page-wrap section-block reveal" id="observatory">
-      <div class="section-heading"><div><div class="section-kicker"><span>02</span> DESIGN INTEGRATION / PACKET OBSERVATORY</div><h2>FROM <span>PACKET</span> TO CONTEXT.</h2></div><p>Wireshark bleibt die Referenz für Sichtbarkeit. CyberGuardian nimmt daraus bewusst nur den defensiven Metadaten-Kern.</p></div>
+      <div class="section-heading"><div><div class="section-kicker"><span>03</span> DESIGN INTEGRATION / PACKET OBSERVATORY</div><h2>FROM <span>PACKET</span> TO CONTEXT.</h2></div><p>Wireshark bleibt die Referenz für Sichtbarkeit. CyberGuardian nimmt daraus bewusst nur den defensiven Metadaten-Kern.</p></div>
       <div class="observatory-grid">
         <article class="panel packet-panel">
           <div class="panel-head"><div><span>WIRESHARK BRIDGE</span><h3>HEADER METADATA</h3></div><b class="status-label">SAFE DEMO</b></div>
@@ -109,13 +115,13 @@
     </section>
 
     <section class="architecture page-wrap section-block reveal" id="architecture">
-      <div class="section-heading"><div><div class="section-kicker"><span>03</span> UNDER THE HOOD / LOCAL JSON + ATOMIC WRITES</div><h2>ONE <span>CONTROL PLANE.</span></h2></div><p>Der Browser ist die Leitstelle. Die Datenhoheit bleibt lokal und die Integrationen sind allowlistet.</p></div>
+      <div class="section-heading"><div><div class="section-kicker"><span>04</span> UNDER THE HOOD / LOCAL JSON + ATOMIC WRITES</div><h2>ONE <span>CONTROL PLANE.</span></h2></div><p>Der Browser ist die Leitstelle. Die Datenhoheit bleibt lokal und die Integrationen sind allowlistet.</p></div>
       <div class="architecture-flow"><article><span>01 / OBSERVE</span><strong>SENSORIK</strong><p>tshark, Zeek oder read-only Endpoint-Checks liefern begrenzte Metadaten.</p></article><i>→</i><article><span>02 / ALIGN</span><strong>AGENT MESH</strong><p>Pläne, Rollen, Handoffs und gemeinsame Prioritäten werden synchronisiert.</p></article><i>→</i><article class="architecture-core"><span>03 / DECIDE</span><strong>SOT / DO</strong><p>Die Control Plane speichert Absicht, Status, Ergebnis und Verantwortlichkeit.</p></article><i>→</i><article><span>04 / PROTECT</span><strong>AUDIT TRAIL</strong><p>Decoys, Incidents und sichere Aktionen bleiben nachvollziehbar lokal.</p></article></div>
       <div class="architecture-stats"><div><strong>15</strong><span>MODULE IM TOOL ATLAS</span></div><div><strong>04</strong><span>AGENTENROLLEN</span></div><div><strong>00</strong><span>ATTACK PATHS</span></div><div><strong>01</strong><span>SINGLE SOURCE OF DO</span></div></div>
     </section>
 
     <section class="tool-atlas page-wrap section-block reveal" id="tools">
-      <div class="section-heading"><div><div class="section-kicker"><span>04</span> TOOL ATLAS / NEXT INTEGRATIONS</div><h2>THE <span>DEFENSIVE</span> STACK.</h2></div><p>Jedes Modul braucht eine erlaubte Aktion, einen Boundary-Hinweis, ein Timeout und einen Audit-Eintrag.</p></div>
+      <div class="section-heading"><div><div class="section-kicker"><span>05</span> TOOL ATLAS / NEXT INTEGRATIONS</div><h2>THE <span>DEFENSIVE</span> STACK.</h2></div><p>Jedes Modul braucht eine erlaubte Aktion, einen Boundary-Hinweis, ein Timeout und einen Audit-Eintrag.</p></div>
       <div class="tool-grid">
         <article class="tool-card tool-card--active"><span>NETWORK</span><h3>TSHARK / TCPDUMP</h3><p>Begrenzte Packet-Metadaten, Protocol Distribution und Conversation Map.</p><b>INTEGRATED</b></article>
         <article class="tool-card"><span>NETWORK</span><h3>ZEEK</h3><p>Strukturierte Verbindungs-, DNS- und TLS-Metadaten als Ergänzung zu Einzelpaketen.</p><b>PROPOSED / READ ONLY</b></article>
@@ -127,11 +133,11 @@
     </section>
 
     <section class="safety page-wrap section-block reveal" id="safety">
-      <div class="safety-header"><div><div class="section-kicker"><span>05</span> SAFETY SCOPE / EXPLICIT BOUNDARY</div><h2>THE GUARDIAN<br><span>DOESN'T STRIKE.</span></h2></div><p>CyberGuardian ist für Beobachtung, Koordination und sichere Übungen gebaut — nicht für Gegenangriffe.</p></div>
+      <div class="safety-header"><div><div class="section-kicker"><span>06</span> SAFETY SCOPE / EXPLICIT BOUNDARY</div><h2>THE GUARDIAN<br><span>DOESN'T STRIKE.</span></h2></div><p>CyberGuardian ist für Beobachtung, Koordination und sichere Übungen gebaut — nicht für Gegenangriffe.</p></div>
       <div class="safety-grid"><article class="safety-card safety-card--yes"><span>ALLOWED</span><h3>OBSERVE</h3><p>Read-only Metadaten, lokale Inventur, synthetische Honeypot-Signale und offline Analysen.</p></article><article class="safety-card safety-card--yes"><span>ALLOWED</span><h3>ALIGN</h3><p>Pläne broadcasten, Agenten informieren, Handoffs dokumentieren und Incidents quittieren.</p></article><article class="safety-card safety-card--no"><span>NOT EXPOSED</span><h3>ATTACK</h3><p>Keine Exploits, keine Credential-Probes, keine beliebige Shell und kein produktives IPS-Blocking.</p></article><article class="safety-card safety-card--no"><span>NOT EXPOSED</span><h3>MUTATE</h3><p>Keine MAC-Änderung, keine Proxyroute, keine Listener und keine unkontrollierten Systemmutationen aus dem Browser.</p></article></div>
     </section>
 
-    <section class="final-cta page-wrap reveal"><div><span class="section-kicker"><span>06</span> OPEN THE CONTROL PLANE</span><h2>BUILD THE NEXT<br><span>SAFE STEP.</span></h2></div><div><p>Starte das lokale Browser-Cockpit, lies den Project Brief oder öffne den Quellcode.</p><div class="hero-actions"><a class="button button--primary" href="https://github.com/INDIEaner84/CyberGuardian#schnellstart-browser-cockpit" target="_blank" rel="noreferrer">COCKPIT STARTEN ↗</a><a class="button" href="https://github.com/INDIEaner84/CyberGuardian" target="_blank" rel="noreferrer">SOURCE AUF GITHUB ↗</a></div></div></section>
+    <section class="final-cta page-wrap reveal"><div><span class="section-kicker"><span>07</span> OPEN THE CONTROL PLANE</span><h2>BUILD THE NEXT<br><span>SAFE STEP.</span></h2></div><div><p>Starte das lokale Browser-Cockpit, lies den Project Brief oder öffne den Quellcode.</p><div class="hero-actions"><a class="button button--primary" href="https://github.com/INDIEaner84/CyberGuardian#schnellstart-browser-cockpit" target="_blank" rel="noreferrer">COCKPIT STARTEN ↗</a><a class="button" href="https://github.com/INDIEaner84/CyberGuardian" target="_blank" rel="noreferrer">SOURCE AUF GITHUB ↗</a></div></div></section>
   </main>
 
   <footer class="site-footer page-wrap"><span>CYBERGUARDIAN PRO / DEFENSIVE CONTROL PLANE</span><span>BUILT FOR DEFENSE · <a href="https://github.com/INDIEaner84/CyberGuardian" target="_blank" rel="noreferrer">INDIEaner84/CyberGuardian ↗</a></span><span>© <span id="siteYear">2026</span></span></footer>

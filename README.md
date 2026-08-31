@@ -26,6 +26,16 @@ Der Browser ist eine verständliche Leitstelle, kein offener Remote-Shell-Runner
 
 CyberGuardian richtet sich an defensive Blue Teams, Security-Lern- und Forschungslabore, Betreiber kleiner autorisierter Testumgebungen sowie Entwickler von Agenten-Workflows. Es ist besonders nützlich, wenn mehrere Rollen dieselben Beobachtungen sehen müssen: Operatoren setzen Grenzen, Agenten korrelieren und übergeben Kontext, und Lernende können Abläufe mit virtuellen Honeypots nachvollziehen.
 
+## App Preview
+
+Die folgenden UI-Aufnahmen zeigen die wichtigsten Bereiche der aktuellen App. Sie sind als statische, repository-eigene SVG-Previews abgelegt und funktionieren direkt auf GitHub ohne externe Bild- oder Font-Abhängigkeiten.
+
+<p align="center"><img src="docs/screenshots/design-lab.svg" alt="CyberGuardian Design Lab mit vier auswählbaren Richtungen" width="100%"></p>
+
+<p align="center"><img src="docs/screenshots/command-deck.svg" alt="CyberGuardian Command Deck mit Mission Control, Agenten und Safety Rail" width="100%"></p>
+
+<p align="center"><img src="docs/screenshots/packet-observatory.svg" alt="CyberGuardian Packet Observatory mit Wireshark-Metadaten, Protokollverteilung und Korrelation" width="100%"></p>
+
 ## Oberfläche und Prototypen
 
 Das Browser-Cockpit enthält ein Startmenü mit sechs Einstiegen:
