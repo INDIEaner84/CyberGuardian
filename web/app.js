@@ -227,8 +227,19 @@
     window.setTimeout(() => item.remove(), 4300);
   }
 
+  function renderLandingState() {
+    if (!state) return;
+    const stats = state.stats || {};
+    $('#landingAgentCount').textContent = String(stats.online_agents || 0).padStart(2, '0');
+    $('#landingPlanCount').textContent = String(state.plans?.length || 0).padStart(2, '0');
+    $('#landingSignalCount').textContent = String(stats.signals_today || 0).padStart(2, '0');
+    $('#landingMode').textContent = state.settings?.simulation_mode ? 'SIMULATION / LOCAL' : 'DEFENSE / LOCAL';
+    $('#heroAgentReadout').textContent = `${String(stats.online_agents || 0).padStart(2, '0')} ONLINE`;
+  }
+
   function renderAll() {
     if (!state) return;
+    renderLandingState();
     renderMetrics();
     renderPlans();
     renderAgents();
@@ -674,6 +685,37 @@
     }
   }
 
+  function startLandingInteraction() {
+    if (!motionPreferred) return;
+    const visual = $('.hero-visual');
+    if (visual) {
+      visual.addEventListener('pointermove', (event) => {
+        const bounds = visual.getBoundingClientRect();
+        const x = (event.clientX - bounds.left) / bounds.width - .5;
+        const y = (event.clientY - bounds.top) / bounds.height - .5;
+        visual.style.setProperty('--tilt-x', `${(x * 5).toFixed(2)}deg`);
+        visual.style.setProperty('--tilt-y', `${(-y * 5).toFixed(2)}deg`);
+      });
+      visual.addEventListener('pointerleave', () => {
+        visual.style.removeProperty('--tilt-x');
+        visual.style.removeProperty('--tilt-y');
+      });
+    }
+    $$('.prototype-card').forEach((card) => {
+      card.addEventListener('pointermove', (event) => {
+        const bounds = card.getBoundingClientRect();
+        const x = (event.clientX - bounds.left) / bounds.width - .5;
+        const y = (event.clientY - bounds.top) / bounds.height - .5;
+        card.style.setProperty('--card-ry', `${(x * 5).toFixed(2)}deg`);
+        card.style.setProperty('--card-rx', `${(-y * 5).toFixed(2)}deg`);
+      });
+      card.addEventListener('pointerleave', () => {
+        card.style.removeProperty('--card-rx');
+        card.style.removeProperty('--card-ry');
+      });
+    });
+  }
+
   function startBackgroundCanvas() {
     const canvas = $('#signalCanvas');
     if (!canvas || !motionPreferred) return;
@@ -799,12 +841,15 @@
 
   function updateClock() {
     const now = new Date();
-    $('#clockTime').textContent = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const time = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'UTC' });
+    $('#clockTime').textContent = time;
+    $('#landingTime').textContent = `${time} UTC`;
   }
 
   async function boot() {
     bindEvents();
     updateClock(); window.setInterval(updateClock, 1000);
+    startLandingInteraction();
     startBackgroundCanvas();
     await loadState(true);
     window.setInterval(() => { if (!document.hidden) loadState(false); }, 8000);

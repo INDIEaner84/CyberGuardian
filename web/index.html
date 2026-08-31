@@ -33,8 +33,8 @@
 
     <section class="landing-hero" id="top">
       <div class="hero-copy">
-        <p class="eyebrow"><span class="eyebrow-line"></span>NEO-TOKYO SIGNAL DESK / 08:41:16 UTC</p>
-        <h1>ONE <span>TRUTH.</span><br><em>MANY GUARDIANS.</em></h1>
+        <p class="eyebrow"><span class="eyebrow-line"></span>NEO-TOKYO SIGNAL DESK / <span id="landingTime">08:41:16 UTC</span></p>
+        <h1 data-glitch="ONE TRUTH. MANY GUARDIANS.">ONE <span>TRUTH.</span><br><em>MANY GUARDIANS.</em></h1>
         <p class="hero-lede">Ein gemeinsamer Kontrollkern für Agenten, Pläne und defensive Signale. Jeder sieht, was als Nächstes passiert — nichts verschwindet zwischen den Kanälen.</p>
         <div class="hero-actions">
           <button class="button button--primary button--large" data-enter="command">
@@ -57,9 +57,27 @@
         <div class="orbit orbit--two"><i></i></div>
         <div class="orbit orbit--three"><i></i></div>
         <div class="visual-readout visual-readout--top"><span>SYNC</span><strong>100.0%</strong></div>
-        <div class="visual-readout visual-readout--bottom"><span>AGENT MESH</span><strong>04 ONLINE</strong></div>
+        <div class="visual-readout visual-readout--bottom"><span>AGENT MESH</span><strong id="heroAgentReadout">04 ONLINE</strong></div>
+        <div class="visual-data-stack" aria-hidden="true"><div><span>THREAT TEMP</span><i><b style="width: 31%"></b></i><strong>OBSERVE</strong></div><div><span>INTENT FLOW</span><i><b style="width: 84%"></b></i><strong>SYNCED</strong></div><div><span>EVIDENCE</span><i><b style="width: 67%"></b></i><strong>LOCAL</strong></div></div>
+        <div class="visual-reticle" aria-hidden="true"><span></span><i></i><b>NODE 7F-A</b></div>
         <div class="visual-bracket bracket--left">[</div>
         <div class="visual-bracket bracket--right">]</div>
+      </div>
+    </section>
+
+    <section class="mission-overview" id="project-overview">
+      <div class="mission-overview-copy">
+        <p class="eyebrow"><span class="eyebrow-line"></span>PROJECT OVERVIEW / WHY IT EXISTS</p>
+        <h2>THE <span>SHARED NERVE</span><br>FOR HUMAN + AGENT DEFENSE.</h2>
+        <p>CyberGuardian ist kein weiteres Fenster voller Einzeltools. Es ist ein lokales defensives Betriebssystem für Menschen und Agenten: beobachten, Kontext teilen, einen nächsten Schritt festlegen und jede Entscheidung nachvollziehbar hinterlassen.</p>
+        <div class="mission-overview-actions"><button class="button button--ghost" data-enter="about">PROJEKT BRIEF ÖFFNEN ↗</button><span class="mission-route"><i></i> INTENT → SIGNAL → EVIDENCE</span></div>
+      </div>
+      <div class="mission-overview-rail">
+        <div class="rail-orbit"><span></span><b>SOT</b></div>
+        <div class="mission-stat"><strong id="landingAgentCount">04</strong><span>AGENTS IN MESH</span></div>
+        <div class="mission-stat"><strong id="landingPlanCount">03</strong><span>PLANS IN CONTEXT</span></div>
+        <div class="mission-stat"><strong id="landingSignalCount">03</strong><span>DEFENSIVE SIGNALS</span></div>
+        <div class="mission-mode"><span class="status-dot status-dot--green"></span><div><strong>SAFE MODE</strong><small id="landingMode">SIMULATION / LOCAL</small></div></div>
       </div>
     </section>
 
@@ -69,7 +87,7 @@
           <p class="eyebrow"><span class="eyebrow-line"></span>START MENU / SELECT A PROTOTYPE</p>
           <h2>WIE SOLL SICH<br><span>DEIN LEITSTAND</span> ANFÜHLEN?</h2>
         </div>
-          <p>Sechs Interaktionsprototypen. Ein gemeinsamer Datenkern. Wähle einen Einstieg — du kannst jederzeit im Cockpit wechseln.</p>
+        <p>Sechs Interaktionsprototypen. Ein gemeinsamer Datenkern. Wähle einen Einstieg — du kannst jederzeit im Cockpit wechseln.</p>
       </div>
 
       <div class="prototype-grid">
@@ -294,6 +312,7 @@
           <div class="definition-strip"><div><span class="definition-label">IN ONE SENTENCE</span><strong>CyberGuardian ist ein lokaler Übersetzer zwischen Absicht, Beobachtung und sicherem nächsten Schritt.</strong></div><button class="button button--tiny button--ghost" data-view-link="mesh">MESH ANSEHEN ↗</button></div>
           <div class="about-grid"><section class="panel about-hero"><span class="about-quote">“</span><h2>Single source of <span>do.</span></h2><p>CyberGuardian verbindet vorhandene Sicherheitsmodule mit einem gemeinsamen, nachvollziehbaren Kontrollkern. Statt dass Agenten in getrennten Chats aneinander vorbeiplanen, wird ein Vorhaben einmal angelegt, verteilt und mit Status, Besitzer und Audit Trail weitergeführt.</p><div class="about-stats"><div><strong>01</strong><span>SHARED TRUTH</span></div><div><strong>04</strong><span>AGENT ROLES</span></div><div><strong>00</strong><span>ATTACK PATHS</span></div></div></section><section class="panel about-list"><div class="panel-heading"><div><p class="panel-kicker">DESIGN PRINCIPLES</p><h2>LEITPLANKEN</h2></div></div><ol><li><span>01</span><div><strong>Beobachten vor handeln</strong><p>Signale werden gesammelt und korreliert. Keine automatischen Gegenangriffe.</p></div></li><li><span>02</span><div><strong>Jeder Agent sieht den Kontext</strong><p>Pläne, Übergaben und Entscheidungen liegen an einer Stelle.</p></div></li><li><span>03</span><div><strong>Simulation klar markieren</strong><p>Demo-Telemetrie bleibt synthetisch, lokal und in der Oberfläche sichtbar.</p></div></li><li><span>04</span><div><strong>Nur eigene Systeme</strong><p>Produktive Scans und Systemaktionen gehören in einen autorisierten, getrennten Workflow.</p></div></li></ol></section></div>
           <section class="panel architecture-panel"><div class="panel-heading"><div><p class="panel-kicker">UNDER THE HOOD</p><h2>CONTROL PLANE ARCHITECTURE</h2></div><span class="tag tag--green">LOCAL JSON / ATOMIC WRITES</span></div><div class="architecture-flow"><div><b>AGENTS</b><span>ORBIT · KAI · MIKA</span></div><i>→</i><div class="architecture-core"><b>SOT / DO</b><span>control_plane.json</span></div><i>→</i><div><b>DEFENSE UI</b><span>plans · decoys · logs</span></div></div></section>
+          <section class="panel project-map-panel"><div class="panel-heading"><div><p class="panel-kicker">WHY THE PIECES BELONG TOGETHER</p><h2>THE DEFENSIVE LOOP</h2></div><span class="panel-code">OBSERVE / ALIGN / PROTECT</span></div><div class="project-map-grid"><div><span>01</span><strong>OPERATOR</strong><p>Sie setzt Ziel, Grenzen und Priorität. Kein Tool arbeitet heimlich.</p></div><div><span>02</span><strong>AGENT MESH</strong><p>Spezialisierte Rollen teilen Absicht, Status und Übergabe.</p></div><div><span>03</span><strong>SENSORIK</strong><p>Read-only Checks und virtuelle Decoys liefern defensiven Kontext.</p></div><div><span>04</span><strong>AUDIT</strong><p>Jede Beobachtung hinterlässt Zeit, Ergebnis und Verantwortlichkeit.</p></div></div><div class="project-loop"><span>INTENT</span><i>→</i><span>SIGNAL</span><i>→</i><span>CONTEXT</span><i>→</i><span>EVIDENCE</span><i>↻</i></div></section>
         </section>
       </main>
     </div>

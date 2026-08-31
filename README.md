@@ -2,21 +2,54 @@
 
 ## Defensives Agenten-Leitpult · Single Source of Do · Honeypot-Simulation
 
-CyberGuardian ist eine lokale Security-Suite mit einem neuen Browser-Cockpit für defensive Zusammenarbeit. Der zentrale **Control Plane** ist die Single Source of Truth: Agenten und Operatoren sehen dieselben Vorhaben, Besitzer, Statusänderungen, Übergaben und Signale. Ein Plan wird einmal angelegt und an den gesamten Agent Mesh gebroadcastet — kein verlorener Kontext zwischen Chats oder einzelnen Agenten.
+CyberGuardian ist eine lokale, defensive Security-Suite für Menschen und spezialisierte Agenten. Sie bündelt Beobachtung, Planung, Deception, Beweissicherung, Recovery und Tooling in einem gemeinsamen Leitstand.
 
-> **Wichtig:** Das Browser-Labor ist ausdrücklich defensiv und simulation-only. Es öffnet keine Ports, antwortet keinem Netzwerk-Client, führt keine Payloads aus und startet keine Gegenangriffe. Ein Honeypot im Cockpit ist ein virtuelles Testobjekt. Produktive Sicherheitsaktionen dürfen ausschließlich auf eigenen oder ausdrücklich autorisierten Systemen stattfinden.
+Der zentrale **Control Plane** ist die **Single Source of Truth**: Eine Absicht wird einmal als Plan angelegt, von zuständigen Agenten übernommen, mit sicheren Beobachtungen angereichert und als nachvollziehbarer nächster Schritt an das Team verteilt. So bleibt sichtbar, wer was vorhat, warum es passiert, welcher Status gilt und was als Nächstes zu tun ist.
 
-## Was ist neu?
+## Allgemeine Projektbeschreibung
 
-- **Startmenü mit vier Prototypen:** Command Deck, Agent Constellation, Honeypot Lab und Signal Drift.
-- **Cyberpunk-/Neo-Tokyo-Interface:** animiertes HUD mit rotem Sun-Core, Scanlines, Signalpartikeln, Agenten-Knoten und responsivem Layout — inspiriert von der Stimmung klassischer Cyberpunk-Anime, ohne fremde Assets zu verwenden.
-- **Single Source of Do:** Pläne anlegen, Owner und Priorität setzen, Status durch den Workflow bewegen und jede Änderung im Mesh sichtbar machen.
-- **Agent-to-Agent-Handoffs:** Presence, Broadcast-Nachrichten und Kontextübergaben landen gemeinsam im lokalen Audit Trail.
-- **Defensives Honeypot-Lab:** virtuelle Decoys konfigurieren, aktivieren/deaktivieren, synthetische Testsignale einspeisen und zugehörige Incidents quittieren.
-- **Defense Ops:** ein begrenzter Packet Observatory im Stil einer Wireshark/tshark-Metadatenansicht, Proxychains-Installationscheck und MAC-Rotationsvorschau. Alles ist allowlisted, zeitlich begrenzt und erklärt die Grenze sichtbar.
-- **Tool Atlas:** alle bekannten Module — Network, Wireless, Ports, Prozesse, WireGuard, Proxy/Anonymizer, Router, IDS/IPS, Integrity, Forensics, Backups, Logger, Config, Control Plane und Defense Ops — liegen auf einer Oberfläche. Jeder Run hat Erklärung, Safety Rail, Verfügbarkeit, Watch-Posture und Audit-Eintrag.
-- **Persistenz ohne Zusatzdienst:** atomare JSON-Schreibvorgänge nach `~/.cyberguardian/control_plane.json`; der Browser spricht ausschließlich mit der lokalen Control Plane.
-- **Dependency-free Web-Start:** Das Cockpit läuft mit Python-Standardbibliothek. Die ältere CustomTkinter-/Dear-PyGui-Oberfläche bleibt für lokale Desktop-Workflows erhalten.
+CyberGuardian ist in drei Ebenen gedacht:
+
+1. **Wahrnehmen** — lokale, read-only Sensorik und begrenzte Metadaten-Checks für Interfaces, Prozesse, Sockets, WLAN, VPN und Tool-Verfügbarkeit.
+2. **Verstehen** — Agent Mesh, Handoffs, Prioritäten, Incidents und eine gemeinsame Aktivitätsspur verbinden einzelne Signale zu Kontext.
+3. **Verantwortungsvoll handeln** — virtuelle Honeypot-Übungen, Beweiskette, Backups und explizite Safety Rails ersetzen unkontrollierte Gegenangriffe.
+
+Der Browser ist eine verständliche Leitstelle, kein offener Remote-Shell-Runner. Die Oberfläche kann sichere, allowlistete Beobachtungsaktionen auslösen und deren Resultat auditieren. Produktive oder privilegierte Änderungen bleiben bewusst einem separat authentifizierten Operator-Workflow vorbehalten.
+
+## Oberfläche und Prototypen
+
+Das Browser-Cockpit enthält ein Startmenü mit sechs Einstiegen:
+
+- **Command Deck** — Lagebild, Mission Stream, Agenten, Incidents und nächste Schritte.
+- **Agent Constellation** — Single Source of Do: Pläne, Handoffs und gemeinsame Zuständigkeit.
+- **Honeypot Lab** — virtuelle Decoys konfigurieren, synthetische Signale einspeisen und Incidents quittieren.
+- **Defense Ops** — bounded Packet Observatory im Stil einer Wireshark/tshark-Metadatenansicht, Proxychains-Check und MAC-Rotationsvorschau.
+- **Tool Atlas** — alle bekannten CyberGuardian-Module mit Erklärung, Status, erlaubter Aktion, Watch-Posture und Run-Historie.
+- **Signal Drift** — animierte, Neo-Tokyo-/Cyberpunk-inspirierte Übersicht für die Systemtemperatur.
+
+Die visuelle Sprache nutzt originales CSS/Canvas-HUD-Design: roter Sun-Core, Neon-Signalringe, Scanlines, Datenraster, Agenten-Konstellation und bewegte Signalpartikel. Es werden keine fremden Figuren oder geschützten Assets verwendet.
+
+## Bekannte Tools im gemeinsamen Tool Atlas
+
+Der Tool Atlas vereinheitlicht die bestehenden Module:
+
+- Network Scanner
+- Wireless Auditor
+- Port Manager
+- Process Monitor
+- WireGuard
+- Anonymizer / Proxychains
+- Router Tools
+- IDS / IPS
+- File Integrity
+- Forensics
+- Backup / Rollback
+- Action Logger
+- Config / Safety
+- Control Plane
+- Defense Ops
+
+Jede Ausführung speichert Tool, Aktion, Zeit, Modus, Status, Ergebnis und Detaildaten im lokalen Audit Trail. Mit **SAFE AUDIT AUSFÜHREN** können die allowlisteten Beobachtungsaktionen gesammelt und nachvollziehbar geprüft werden.
 
 ## Schnellstart: Browser-Cockpit
 
@@ -26,17 +59,17 @@ python3 server.py
 # alternativ: python3 launcher.py --browser
 ```
 
-Danach im Browser öffnen: <http://localhost:4173>
+Danach öffnen: <http://localhost:4173>
 
-Für die Arena-/Container-Vorschau oder einen Zugriff im lokalen Netz:
+Für die Arena-/Container-Vorschau:
 
 ```bash
 python3 server.py --host 0.0.0.0 --port 4173
 ```
 
-Der Server akzeptiert den Preview-Host, verwendet relative API-URLs und bindet standardmäßig auf `0.0.0.0`. Mit `Ctrl+C` beenden.
+Der Server akzeptiert den Preview-Host, verwendet relative API-URLs und benötigt für das Browser-Cockpit keine Python-Drittanbieterpakete. Mit `Ctrl+C` beenden.
 
-### Control-Plane-API
+## Control-Plane- und Tool-API
 
 | Methode | Endpoint | Zweck |
 | --- | --- | --- |
@@ -45,10 +78,10 @@ Der Server akzeptiert den Preview-Host, verwendet relative API-URLs und bindet s
 | `POST` | `/api/plans` | Defensiven Plan an alle Agenten broadcasten |
 | `PATCH` | `/api/plans/<id>` | Status oder Fortschritt aktualisieren |
 | `POST` | `/api/agents` | Agent registrieren / online melden |
-| `POST` | `/api/messages` | Kontextübergabe an einen Agenten oder den Mesh |
+| `POST` | `/api/messages` | Kontextübergabe an Agenten oder den Mesh |
 | `POST` | `/api/honeypots` | Virtuellen Decoy erstellen |
 | `POST` | `/api/honeypots/<id>/toggle` | Decoy in Simulation aktivieren/pausieren |
-| `POST` | `/api/honeypots/<id>/simulate` | Klar markiertes, synthetisches Testsignal erfassen |
+| `POST` | `/api/honeypots/<id>/simulate` | Synthetisches Testsignal erfassen |
 | `POST` | `/api/incidents/<id>/ack` | Defensive Beobachtung quittieren |
 | `GET` | `/api/ops/overview` | Lokale Tool- und Interface-Fähigkeiten lesen |
 | `POST` | `/api/ops/capture` | Bounded Packet-Metadaten-Capture oder sichere Demo |
@@ -56,10 +89,12 @@ Der Server akzeptiert den Preview-Host, verwendet relative API-URLs und bindet s
 | `GET` | `/api/ops/mac?interface=<name>` | MAC-Adresse read-only lesen |
 | `POST` | `/api/ops/mac-preview` | MAC-Rotation nur als Vorschau erzeugen |
 | `GET` | `/api/tools` | Einheitlichen Katalog aller bekannten Module lesen |
-| `POST` | `/api/tools/<id>/run` | Eine allowlistete Beobachtungsaktion ausführen und auditieren |
+| `POST` | `/api/tools/<id>/run` | Allowlistete Beobachtungsaktion ausführen und auditieren |
 | `POST` | `/api/tools/<id>/toggle` | Watch-Posture lokal aktivieren/pausieren |
 
-Die API führt keine beliebigen Shell-Befehle aus. Packet Capture ist auf wenige Sekunden und Metadatenzeilen begrenzt; MAC- und Proxychains-Aktionen verändern bzw. routen das System nicht. Der Speicherort kann für Tests überschrieben werden:
+Die API führt keine beliebigen Shell-Befehle aus. Packet Capture ist auf wenige Sekunden und Metadatenzeilen begrenzt; MAC- und Proxychains-Aktionen verändern bzw. routen das System nicht.
+
+Für Tests kann ein eigener Speicherort verwendet werden:
 
 ```bash
 CYBERGUARDIAN_STATE_FILE=/tmp/cyberguardian-state.json python3 server.py
@@ -69,7 +104,7 @@ CYBERGUARDIAN_STATE_FILE=/tmp/cyberguardian-state.json python3 server.py
 
 ```text
 CyberGuardian/
-├── server.py               # Dependency-free Webserver + JSON-API
+├── server.py               # dependency-freier Webserver + JSON-API
 ├── web/
 │   ├── index.html          # Startmenü, Cockpit und Projektbrief
 │   ├── styles.css          # Cyberpunk-HUD, Animationen, responsive Layout
@@ -79,15 +114,14 @@ CyberGuardian/
 │   ├── defense_ops.py      # allowlisted Capture-, Proxy- und MAC-Inspektion
 │   ├── tool_catalog.py     # gemeinsamer Katalog + erlaubte Tool-Aktionen
 │   └── ...                  # bestehende defensive Sicherheitsmodule
-├── main.py                 # bisherige CustomTkinter-Oberfläche
-├── main_anime.py           # bisherige Dear-PyGui-Oberfläche
-├── launcher.py             # Desktop-Abhängigkeitscheck und Fallback
+├── main.py                 # CustomTkinter-Oberfläche
+├── main_anime.py           # Dear-PyGui-Oberfläche
+├── launcher.py             # Desktop-Abhängigkeitscheck und Browser-Shortcut
+├── tests/                  # Control-Plane-, Defense-Ops- und Katalogtests
 └── utils/                  # Logging, Backups und Konfiguration
 ```
 
 ## Desktop-Edition (optional)
-
-Die bestehenden Python-Abhängigkeiten werden weiterhin über `requirements.txt` installiert:
 
 ```bash
 python3 -m venv venv
@@ -96,12 +130,15 @@ pip install -r requirements.txt
 python3 launcher.py
 ```
 
-`launcher.py` prüft die Desktop-GUIs und wählt die Anime- oder Classic-Edition. Für das neue Browser-Cockpit sind `customtkinter`, Dear PyGui und Systemtools nicht erforderlich.
+Die Desktop-Oberflächen bleiben erhalten. Für das neue Browser-Cockpit sind CustomTkinter, Dear PyGui und Systemtools nicht erforderlich.
 
 ## Sicherheits- und Ethik-Leitplanken
 
 - Nur eigene oder ausdrücklich freigegebene Systeme beobachten.
 - Keine Angriffsautomatisierung, Exploits, Credential-Tests oder Gegenmaßnahmen aus dem Browser-Labor.
 - Synthetische Beispielquellen nutzen dokumentations-reservierte IP-Bereiche (`192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`).
+- Honeypots im Browser sind virtuelle Testobjekte und öffnen keine Ports.
 - Logs bleiben lokal und sind als `simulated`/`synthetic` gekennzeichnet.
-- Für produktive Sensorik sind Authentifizierung, Rollenrechte, Verschlüsselung, Rotation und ein separat gehärteter Collector erforderlich; das Demo-Cockpit ersetzt keinen produktiven SIEM- oder Honeypot-Dienst.
+- Für produktive Sensorik sind Authentifizierung, Rollenrechte, Verschlüsselung, Rotation und ein separat gehärteter Collector erforderlich.
+- Ein MAC-Changer-Button im Browser erzeugt nur eine Vorschau; die Systemidentität wird nicht verändert.
+- Proxychains wird nur inspiziert; es wird keine Browser-Route und kein externer Request gestartet.
