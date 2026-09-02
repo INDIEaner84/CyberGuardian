@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
 CyberGuardian Pro - Smart Launcher
-Prüft Abhängigkeiten und wählt die beste GUI-Version
+Prüft Abhängigkeiten und wählt die beste GUI-Version.
+
+Für das dependency-freie Browser-Cockpit:
+    python3 launcher.py --browser
 """
 
 import subprocess
@@ -19,6 +22,14 @@ class Colors:
     RED = "\033[91m"
     END = "\033[0m"
     BOLD = "\033[1m"
+
+
+def launch_browser():
+    """Start the dependency-free browser cockpit without desktop installs."""
+    print(f"{Colors.CYAN}{Colors.BOLD}Starte CONTROL PLANE BROWSER COCKPIT...{Colors.END}")
+    server_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "server.py")
+    forwarded_args = [arg for arg in sys.argv[1:] if arg != "--browser"]
+    os.execv(sys.executable, [sys.executable, server_path] + forwarded_args)
 
 
 def print_header():
@@ -188,6 +199,13 @@ def launch_customtkinter():
 
 
 def main():
+    # The web cockpit needs only the Python standard library.  Handle this
+    # before the legacy desktop dependency checks so a fresh machine can use
+    # the browser UI immediately.
+    if "--browser" in sys.argv:
+        launch_browser()
+        return
+
     print_header()
 
     # Check Python version

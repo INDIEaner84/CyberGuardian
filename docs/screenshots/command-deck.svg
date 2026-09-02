@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">CyberGuardian Command Deck interface preview</title>
+  <desc id="desc">Dark cyberpunk dashboard with mission control metrics, shared agent context and safe mode.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#070d14"/><stop offset=".56" stop-color="#0b1720"/><stop offset="1" stop-color="#1e1017"/></linearGradient>
+    <linearGradient id="panel" x2="0" y2="1"><stop stop-color="#14232c" stop-opacity=".95"/><stop offset="1" stop-color="#080e16" stop-opacity=".98"/></linearGradient>
+    <linearGradient id="redPanel"><stop stop-color="#3d1a20" stop-opacity=".88"/><stop offset="1" stop-color="#11151e" stop-opacity=".9"/></linearGradient>
+    <pattern id="grid" width="42" height="42" patternUnits="userSpaceOnUse"><path d="M42 0H0V42" fill="none" stroke="#70f3f2" stroke-opacity=".075"/></pattern>
+    <filter id="glowC"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="glowR"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <style>
+      .mono{font-family:Consolas,monospace;letter-spacing:2px}.display{font-family:Arial Narrow,Arial,sans-serif;letter-spacing:1px}.dim{fill:#59717a}.muted{fill:#93a8ab}.text{fill:#e8f2ed}.cyan{fill:#70f3f2}.red{fill:#ff4c3a}.green{fill:#8cf0ad}.orange{fill:#ff9b52}.line{stroke:#5c7a83;stroke-opacity:.28}.small{font-size:12px}.tiny{font-size:10px}
+    </style>
+  </defs>
+  <rect width="1440" height="900" fill="#05070d"/>
+  <rect width="1440" height="900" fill="url(#bg)"/>
+  <rect x="260" y="78" width="1180" height="822" fill="url(#grid)" opacity=".9"/>
+  <path d="M0 170H1440" stroke="#ff4c3a" stroke-opacity=".1"/><path d="M0 730H1440" stroke="#70f3f2" stroke-opacity=".1"/>
+
+  <rect x="0" y="0" width="1440" height="64" fill="#080d14" stroke="#536e76" stroke-opacity=".38"/>
+  <rect x="0" y="63" width="1440" height="2" fill="#70f3f2" fill-opacity=".23"/>
+  <g transform="translate(23 18)"><rect width="30" height="27" fill="none" stroke="#70f3f2"/><rect x="5" y="15" width="4" height="8" fill="#70f3f2"/><rect x="12" y="9" width="4" height="14" fill="#70f3f2"/><rect x="19" y="3" width="4" height="20" fill="#ff4c3a"/><text x="42" y="13" class="display text" font-size="17" font-weight="bold">CYBERGUARDIAN</text><text x="42" y="27" class="mono dim tiny">SOT / MISSION CONTROL</text></g>
+  <text x="295" y="37" class="mono dim small">/</text><text x="315" y="37" class="mono cyan small">COMMAND DECK</text>
+  <circle cx="1212" cy="31" r="5" fill="#8cf0ad" filter="url(#glowC)"/><text x="1226" y="36" class="mono green tiny">PLANE SYNC</text><text x="1330" y="36" class="mono text small">18:42:07</text><text x="1402" y="36" class="mono dim tiny">UTC</text>
+
+  <rect x="0" y="65" width="242" height="835" fill="#070c13" fill-opacity=".93" stroke="#536e76" stroke-opacity=".25"/>
+  <text x="26" y="103" class="mono dim tiny">OPERATIONS / 07</text>
+  <g class="mono small">
+    <rect x="18" y="124" width="208" height="42" fill="#10262d" stroke="#70f3f2" stroke-opacity=".55"/><text x="31" y="150" class="cyan">01</text><text x="70" y="150" class="text">◈  COMMAND DECK</text><text x="202" y="150" class="red">↗</text>
+    <rect x="18" y="175" width="208" height="42" fill="none" stroke="#536e76" stroke-opacity=".25"/><text x="31" y="201" class="dim">02</text><text x="70" y="201" class="muted">✣  AGENT MESH</text>
+    <rect x="18" y="226" width="208" height="42" fill="none" stroke="#536e76" stroke-opacity=".25"/><text x="31" y="252" class="dim">03</text><text x="70" y="252" class="muted">⌁  HONEYPOT LAB</text>
+    <rect x="18" y="277" width="208" height="42" fill="none" stroke="#536e76" stroke-opacity=".25"/><text x="31" y="303" class="dim">04</text><text x="70" y="303" class="muted">⌘  DEFENSE OPS</text>
+    <rect x="18" y="328" width="208" height="42" fill="none" stroke="#536e76" stroke-opacity=".25"/><text x="31" y="354" class="dim">05</text><text x="70" y="354" class="muted">▦  TOOL ATLAS</text>
+    <rect x="18" y="379" width="208" height="42" fill="none" stroke="#536e76" stroke-opacity=".25"/><text x="31" y="405" class="dim">06</text><text x="70" y="405" class="muted">⟡  SIGNAL DRIFT</text>
+  </g>
+  <rect x="18" y="658" width="208" height="142" fill="#0d1e23" stroke="#8cf0ad" stroke-opacity=".28"/><circle cx="36" cy="683" r="5" fill="#8cf0ad"/><text x="50" y="688" class="mono green tiny">SAFETY RAIL</text><text x="190" y="688" class="mono green tiny">ON</text><text x="31" y="718" class="display muted" font-size="13">Simulation-only mode aktiv.</text><text x="31" y="738" class="display muted" font-size="13">Browser-Aktionen schreiben nur</text><text x="31" y="758" class="display muted" font-size="13">in die lokale Control Plane.</text><rect x="31" y="775" width="181" height="3" fill="#8cf0ad" fill-opacity=".2"/><rect x="31" y="775" width="181" height="3" fill="#8cf0ad"/><text x="31" y="793" class="mono green tiny">NO ATTACK PATHS EXPOSED</text>
+
+  <g transform="translate(280 105)"><text class="mono cyan tiny" y="0">LIVE COMMAND DECK / SHARED CONTEXT</text><text y="53" class="display text" font-size="63" font-weight="bold">MISSION <tspan class="red">CONTROL</tspan></text><text y="82" class="display muted" font-size="17">Ein Lagebild. Ein nächster Schritt. Alle Agenten informiert.</text></g>
+  <rect x="280" y="223" width="1130" height="77" fill="#10232a" stroke="#70f3f2" stroke-opacity=".3"/><rect x="280" y="223" width="4" height="77" fill="#70f3f2"/><text x="304" y="248" class="mono dim tiny">YOU ARE HERE / STARTPUNKT</text><text x="304" y="276" class="display text" font-size="21" font-weight="bold">COMMAND DECK</text><text x="514" y="269" class="display muted" font-size="13">Hier liest du zuerst die Lage und entscheidest, welcher defensive Schritt als Nächstes verfolgt wird.</text><rect x="1196" y="244" width="190" height="31" fill="#ff4c3a"/><text x="1215" y="264" class="mono" fill="#160809" font-size="10" font-weight="bold">PLAN STARTEN ↗</text>
+
+  <g transform="translate(280 326)">
+    <g><rect width="265" height="127" fill="url(#panel)" stroke="#70f3f2" stroke-opacity=".28"/><text x="17" y="25" class="mono dim tiny">AGENTS ONLINE</text><text x="17" y="72" class="display cyan" font-size="50" font-weight="bold">03 <tspan class="dim" font-size="15">/ 04</tspan></text><rect x="17" y="99" width="230" height="4" fill="#70f3f2" fill-opacity=".13"/><rect x="17" y="99" width="173" height="4" fill="#70f3f2"/></g>
+    <g transform="translate(279)"><rect width="265" height="127" fill="url(#panel)" stroke="#ff9b52" stroke-opacity=".35"/><text x="17" y="25" class="mono dim tiny">ACTIVE PLANS</text><text x="17" y="72" class="display orange" font-size="50" font-weight="bold">01</text><rect x="17" y="99" width="230" height="4" fill="#ff9b52" fill-opacity=".13"/><rect x="17" y="99" width="155" height="4" fill="#ff9b52"/></g>
+    <g transform="translate(558)"><rect width="265" height="127" fill="url(#redPanel)" stroke="#ff4c3a" stroke-opacity=".48"/><text x="17" y="25" class="mono dim tiny">OPEN INCIDENTS</text><text x="17" y="72" class="display red" font-size="50" font-weight="bold">01</text><rect x="17" y="99" width="230" height="4" fill="#ff4c3a" fill-opacity=".15"/><rect x="17" y="99" width="58" height="4" fill="#ff4c3a"/></g>
+    <g transform="translate(837)"><rect width="293" height="127" fill="url(#panel)" stroke="#f168d4" stroke-opacity=".28"/><text x="17" y="25" class="mono dim tiny">SIGNALS CAPTURED</text><text x="17" y="72" class="display" fill="#f168d4" font-size="50" font-weight="bold">01</text><text x="100" y="72" class="mono dim tiny">SYNTHETIC</text><rect x="17" y="99" width="258" height="4" fill="#f168d4" fill-opacity=".12"/><rect x="17" y="99" width="43" height="4" fill="#f168d4"/></g>
+  </g>
+
+  <rect x="280" y="484" width="733" height="337" fill="url(#panel)" stroke="#5c7a83" stroke-opacity=".28"/><text x="305" y="516" class="mono dim tiny">MISSION STREAM / SINGLE SOURCE OF DO</text><text x="305" y="550" class="display text" font-size="28" font-weight="bold">ACTIVE DEFENSIVE PLANS</text><text x="305" y="577" class="display muted" font-size="13">Jeder Owner sieht denselben nächsten Schritt.</text>
+  <g transform="translate(305 603)"><rect width="683" height="66" fill="#0a141b" stroke="#ff9b52" stroke-opacity=".25"/><rect width="5" height="66" fill="#ff9b52"/><text x="18" y="23" class="mono orange tiny">PLN-001 · HIGH · SENTINEL</text><text x="18" y="47" class="display text" font-size="17">EDGE-LAYER BASELINE</text><text x="587" y="34" class="display orange" font-size="22">68%</text><rect x="18" y="55" width="550" height="3" fill="#ff9b52" fill-opacity=".15"/><rect x="18" y="55" width="374" height="3" fill="#ff9b52"/></g>
+  <g transform="translate(305 679)"><rect width="683" height="66" fill="#0a141b" stroke="#70f3f2" stroke-opacity=".22"/><rect width="5" height="66" fill="#70f3f2"/><text x="18" y="23" class="mono cyan tiny">PLN-002 · NORMAL · KAI</text><text x="18" y="47" class="display text" font-size="17">HONEYPOT RELAY V2</text><text x="587" y="34" class="display cyan" font-size="22">36%</text><rect x="18" y="55" width="550" height="3" fill="#70f3f2" fill-opacity=".15"/><rect x="18" y="55" width="198" height="3" fill="#70f3f2"/></g>
+  <rect x="1030" y="484" width="380" height="337" fill="url(#redPanel)" stroke="#ff4c3a" stroke-opacity=".32"/><text x="1055" y="516" class="mono dim tiny">STATUS CARD / SAFETY POSTURE</text><text x="1055" y="557" class="display text" font-size="27" font-weight="bold">OBSERVE <tspan class="red">BEFORE</tspan></text><text x="1055" y="588" class="display text" font-size="27" font-weight="bold">ACTING.</text><text x="1055" y="625" class="display muted" font-size="13">No active response path exposed.</text><circle cx="1275" cy="703" r="65" fill="none" stroke="#ff4c3a" stroke-opacity=".24" stroke-width="9"/><circle cx="1275" cy="703" r="65" fill="none" stroke="#ff4c3a" stroke-width="9" stroke-dasharray="310 100" transform="rotate(-90 1275 703)" filter="url(#glowR)"/><text x="1248" y="713" class="display red" font-size="28">100%</text><text x="1055" y="764" class="mono green tiny">SAFE MODE / LOCAL</text><text x="1055" y="786" class="mono dim tiny">AUDIT TRAIL READY</text>
+</svg>
