@@ -13,9 +13,12 @@
   let toolFilter = 'all';
   let toolSearch = '';
   let offlineMode = false;
-  let toastTimer;
-  let backgroundFrame;
-  let driftFrame;
+  let lastStateJSON = '';
+  let userReducedMotion = false;
+  let backgroundRenderer = null;
+  let driftRenderer = null;
+  let modalReturnFocus = null;
+  let prototypeReturnFocus = null;
   let activePrototype = 'nightwatch';
   let selectedPrototype = null;
 
@@ -116,19 +119,15 @@
     if (!value) return '--:--';
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '--:--';
-    return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', ...(withSeconds ? { second: '2-digit' } : {}) });
+    return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', ...(withSeconds ? { second: '2-digit' } : {}), timeZone: 'UTC' });
   }
 
-  function relativeTime(value) {
-    if (!value) return 'NO SIGNAL';
-    const time = new Date(value).getTime();
-    if (Number.isNaN(time)) return 'UNKNOWN';
-    const seconds = Math.max(0, Math.floor((Date.now() - time) / 1000));
-    if (seconds < 10) return 'JUST NOW';
-    if (seconds < 60) return `${seconds}s AGO`;
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m AGO`;
-    return `${Math.floor(minutes / 60)}h AGO`;
+  function motionAllowed() {
+    return motionPreferred && !userReducedMotion;
+  }
+
+  function signalTotal(stats = {}) {
+    return stats.signals_total ?? stats.signals_today ?? 0;
   }
 
   function displayStatus(status) {
@@ -201,18 +200,29 @@
     return payload;
   }
 
+  function setSyncState(live) {
+    if ($('#syncState')) $('#syncState').textContent = live ? 'LIVE' : 'LOCAL DEMO';
+    if ($('#heroSyncReadout')) $('#heroSyncReadout').textContent = live ? 'LIVE' : 'DEMO';
+  }
+
   async function loadState(showError = false) {
     try {
       const next = await request('/api/state');
+      const serialized = JSON.stringify(next);
+      // The 8s poll must not rebuild the DOM when nothing changed: that would
+      // collapse open details, reset selects and restart CSS transitions.
+      const changed = offlineMode || serialized !== lastStateJSON;
       state = next;
+      lastStateJSON = serialized;
       offlineMode = false;
-      if ($('#syncState')) $('#syncState').textContent = 'LIVE';
-      renderAll();
+      setSyncState(true);
+      if (changed) renderAll();
       return true;
     } catch (error) {
       if (!state) state = clone(fallbackState);
       offlineMode = true;
-      if ($('#syncState')) $('#syncState').textContent = 'LOCAL DEMO';
+      lastStateJSON = '';
+      setSyncState(false);
       renderAll();
       if (showError) toast('Control Plane nicht erreichbar — lokale Demo aktiv.', 'error');
       return false;
@@ -367,15 +377,24 @@
 
   function openPrototypePreview(name) {
     if (!prototypeVariants[name]) return;
+    prototypeReturnFocus = document.activeElement;
     renderPrototypePreview(name);
     $('#prototypeBackdrop').classList.remove('is-hidden');
     document.body.classList.add('prototype-open');
-    window.setTimeout(() => $('#prototypeSelectButton')?.focus(), 40);
+    const modal = $('.prototype-modal');
+    if (modal) modal.scrollTop = 0;
+    // Focus the close button at the top without scrolling, so title and × stay visible.
+    window.setTimeout(() => {
+      $('[data-close-prototype]')?.focus({ preventScroll: true });
+      if (modal) modal.scrollTop = 0;
+    }, 40);
   }
 
   function closePrototypePreview() {
     $('#prototypeBackdrop').classList.add('is-hidden');
     document.body.classList.remove('prototype-open');
+    if (prototypeReturnFocus && document.contains(prototypeReturnFocus)) prototypeReturnFocus.focus({ preventScroll: true });
+    prototypeReturnFocus = null;
   }
 
   function lockPrototypeDirection() {
@@ -419,7 +438,7 @@
     const stats = state.stats || {};
     $('#landingAgentCount').textContent = String(stats.online_agents || 0).padStart(2, '0');
     $('#landingPlanCount').textContent = String(state.plans?.length || 0).padStart(2, '0');
-    $('#landingSignalCount').textContent = String(stats.signals_today || 0).padStart(2, '0');
+    $('#landingSignalCount').textContent = String(signalTotal(stats)).padStart(2, '0');
     $('#landingMode').textContent = state.settings?.simulation_mode ? 'SIMULATION / LOCAL' : 'DEFENSE / LOCAL';
     $('#heroAgentReadout').textContent = `${String(stats.online_agents || 0).padStart(2, '0')} ONLINE`;
   }
@@ -427,6 +446,8 @@
   function renderAll() {
     if (!state) return;
     renderLandingState();
+    renderHealth();
+    renderAgentOptions();
     renderMetrics();
     renderPlans();
     renderAgents();
@@ -440,13 +461,48 @@
     $('#lastSync').textContent = formatTime(state.updated_at, true);
   }
 
+  function meshOnlinePercent(stats = {}) {
+    const total = stats.total_agents || 0;
+    return total ? Math.round(((stats.online_agents || 0) / total) * 100) : 0;
+  }
+
+  function renderHealth() {
+    const stats = state.stats || {};
+    const percent = meshOnlinePercent(stats);
+    const ring = $('#healthRing');
+    if (ring) {
+      ring.style.setProperty('--ring', String(percent));
+      ring.setAttribute('aria-label', `Agent Mesh online: ${percent} Prozent (${stats.online_agents || 0} von ${stats.total_agents || 0} Agenten)`);
+    }
+    if ($('#healthRingValue')) $('#healthRingValue').textContent = String(percent);
+  }
+
+  function setChoiceOptions(select, values, fixed = []) {
+    if (!select) return;
+    const options = [...fixed, ...values.filter((value) => !fixed.includes(value))];
+    const key = options.join('|');
+    if (select.dataset.optionsKey === key) return;
+    const previous = select.value;
+    select.innerHTML = options.map((value) => `<option value="${escapeHTML(value)}">${escapeHTML(value)}</option>`).join('');
+    select.dataset.optionsKey = key;
+    if (options.includes(previous)) select.value = previous;
+  }
+
+  function renderAgentOptions() {
+    // Owner/sender/recipient follow the live mesh, so newly registered agents are selectable.
+    const names = [...new Set((state.agents || []).map((agent) => String(agent.name || '').toUpperCase()).filter(Boolean))];
+    setChoiceOptions($('#planForm select[name="owner"]'), names);
+    setChoiceOptions($('#messageForm select[name="sender"]'), names, ['OPERATOR']);
+    setChoiceOptions($('#messageForm select[name="recipient"]'), names, ['ALL AGENTS']);
+  }
+
   function renderMetrics() {
     const stats = state.stats || {};
     const metrics = [
       { label: 'AGENTS ONLINE', value: `${stats.online_agents || 0}`, unit: `/ ${stats.total_agents || 0}`, icon: '✣', color: '#70f3f2', rail: Math.round(((stats.online_agents || 0) / Math.max(stats.total_agents || 1, 1)) * 100) },
       { label: 'ACTIVE PLANS', value: `${stats.active_plans || 0}`, unit: 'IN MOTION', icon: '◈', color: '#ff9b52', rail: Math.min(100, ((stats.active_plans || 0) / Math.max(state.plans.length, 1)) * 100) },
       { label: 'OPEN INCIDENTS', value: `${stats.open_incidents || 0}`, unit: 'TO TRIAGE', icon: '◆', color: '#ff4c3a', rail: Math.min(100, ((stats.open_incidents || 0) / Math.max(state.incidents.length || 1, 1)) * 100) },
-      { label: 'SIGNALS CAPTURED', value: `${stats.signals_today || 0}`, unit: 'SYNTHETIC', icon: '⌁', color: '#f168d4', rail: Math.min(100, ((stats.signals_today || 0) / 25) * 100) }
+      { label: 'SIGNALS CAPTURED', value: `${signalTotal(stats)}`, unit: 'SYNTHETIC', icon: '⌁', color: '#f168d4', rail: Math.min(100, (signalTotal(stats) / 25) * 100) }
     ];
     $('#commandMetrics').innerHTML = metrics.map((metric) => `
       <article class="metric-card" style="--metric-color:${metric.color}">
@@ -503,16 +559,41 @@
     $('#activityList').innerHTML = items.length ? items.map((event) => `<article class="activity-item"><i class="activity-dot activity-dot--${escapeHTML(event.tone || 'cyan')}"></i><div><p class="activity-text">${escapeHTML(event.text)}</p><span class="activity-time">${escapeHTML(displayKind(event.kind))} · ${formatTime(event.created_at, true)}</span></div></article>`).join('') : '<div class="empty-state">ACTIVITY RIVER CLEAR</div>';
   }
 
+  const MESH_NODE_LIMIT = 8;
+
+  function meshLayout(count) {
+    // Evenly spaced on an ellipse around the SOT core, starting top-left.
+    return Array.from({ length: count }, (_, index) => {
+      const angle = (-135 + (360 / count) * index) * (Math.PI / 180);
+      return [50 + Math.cos(angle) * 34, 50 + Math.sin(angle) * 34];
+    });
+  }
+
   function renderMesh() {
-    const positions = [[20, 25], [80, 24], [18, 77], [81, 76], [50, 50]];
-    const nodes = state.agents.slice(0, 4).map((agent, index) => `<div class="mesh-node" style="left:${positions[index][0]}%;top:${positions[index][1]}%"><strong>${escapeHTML(agent.name)}</strong><small>${agent.status === 'online' ? 'ONLINE' : 'STANDBY'}</small></div>`).join('');
-    const lineCoordinates = [[20, 25, 50, 50], [80, 24, 50, 50], [18, 77, 50, 50], [81, 76, 50, 50]];
-    const lines = lineCoordinates.map(([x1, y1, x2, y2]) => {
-      const dx = x2 - x1; const dy = y2 - y1; const length = Math.sqrt((dx * dx) + (dy * dy));
-      const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-      return `<i class="mesh-map-line" style="left:${x1}%;top:${y1}%;width:${length}%;transform:rotate(${angle}deg)"></i>`;
+    const agents = state.agents || [];
+    const online = agents.filter((agent) => agent.status === 'online');
+    const visible = agents.length <= MESH_NODE_LIMIT
+      ? agents
+      : [...online, ...agents.filter((agent) => agent.status !== 'online')].slice(0, MESH_NODE_LIMIT);
+    const hidden = agents.length - visible.length;
+    const focusOwners = new Set((state.plans || []).filter((plan) => plan.status === 'active').map((plan) => String(plan.owner || '').toUpperCase()));
+    const positions = meshLayout(visible.length);
+    const nodes = visible.map((agent, index) => {
+      const [x, y] = positions[index];
+      const isOnline = agent.status === 'online';
+      const isFocus = isOnline && focusOwners.has(String(agent.name || '').toUpperCase());
+      const classes = ['mesh-node', isOnline ? '' : 'mesh-node--standby', isFocus ? 'mesh-node--focus' : ''].filter(Boolean).join(' ');
+      return `<div class="${classes}" style="left:${x.toFixed(2)}%;top:${y.toFixed(2)}%" title="${escapeHTML(`${agent.name} · ${agent.role || ''} · ${agent.focus || ''}`)}"><strong>${escapeHTML(agent.name)}</strong><small>${isFocus ? 'ACTIVE FOCUS' : isOnline ? 'ONLINE' : 'STANDBY'}</small></div>`;
     }).join('');
-    $('#meshMap').innerHTML = `${lines}<div class="mesh-map-core"><strong>SOT</strong><small>ONE DO</small></div>${nodes}`;
+    const lines = positions.map(([x, y], index) => {
+      const agent = visible[index];
+      const tone = agent.status !== 'online' ? 'mesh-line--standby' : focusOwners.has(String(agent.name || '').toUpperCase()) ? 'mesh-line--focus' : '';
+      return `<line class="${tone}" x1="${x.toFixed(2)}" y1="${y.toFixed(2)}" x2="50" y2="50"></line>`;
+    }).join('');
+    const map = $('#meshMap');
+    map.classList.toggle('mesh-map--dense', visible.length > 6);
+    map.innerHTML = `<svg class="mesh-map-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${lines}</svg><div class="mesh-map-core"><strong>SOT</strong><small>${hidden > 0 ? `+${hidden} MORE` : 'ONE DO'}</small></div>${nodes || '<div class="empty-state">NO AGENTS REGISTERED</div>'}`;
+    if ($('#meshNodeTag')) $('#meshNodeTag').textContent = `${online.length} / ${agents.length} NODES ONLINE`;
     $('#messageList').innerHTML = state.messages.slice(0, 8).map((message) => `<article class="message-item"><div class="message-route"><strong>${escapeHTML(message.from)}</strong><span>→</span><strong>${escapeHTML(message.to)}</strong><small class="message-kind">${escapeHTML(message.kind)}</small></div><p class="message-text">${escapeHTML(message.text)}</p><time class="message-time">${formatTime(message.created_at, true)} UTC</time></article>`).join('') || '<div class="empty-state">NO HANDOFFS YET</div>';
     const columns = [
       ['active', 'IN MOTION', 'board-column'],
@@ -526,13 +607,20 @@
     }).join('');
   }
 
+  function incidentForSignal(signal) {
+    const incidents = state.incidents || [];
+    if (signal.incident_id) return incidents.find((item) => item.id === signal.incident_id);
+    return incidents.find((item) => item.signal_id === signal.id)
+      || incidents.find((item) => !item.signal_id && item.honeypot_id === signal.honeypot_id && item.source === signal.source && item.tactic === signal.tactic && new Date(item.created_at).getTime() === new Date(signal.created_at).getTime());
+  }
+
   function renderLab() {
     $('#labPotGrid').innerHTML = state.honeypots.map((pot) => honeypotCard(pot, true)).join('') || '<div class="empty-state">NO DECOYS — CREATE A VIRTUAL NODE</div>';
     const logItems = state.honeypot_logs.slice(0, 18);
     $('#signalLogCount').textContent = `${state.honeypot_logs.length} EVENTS`;
     const head = '<div class="signal-row signal-row--head"><span>ID</span><span>SOURCE</span><span>DESTINATION</span><span>TACTIC</span><span>SEVERITY</span><span>ACTION</span></div>';
     const rows = logItems.map((signal) => {
-      const incident = state.incidents.find((item) => item.honeypot_id === signal.honeypot_id && item.source === signal.source && item.tactic === signal.tactic && new Date(item.created_at).getTime() === new Date(signal.created_at).getTime());
+      const incident = incidentForSignal(signal);
       const hp = state.honeypots.find((pot) => pot.id === signal.honeypot_id);
       const acknowledged = incident && incident.status !== 'open';
       return `<div class="signal-row"><span class="signal-cell signal-cell--id">${escapeHTML(signal.id)}</span><span class="signal-cell"><strong>${escapeHTML(signal.source)}</strong><small class="signal-simulated"> SYNTHETIC</small></span><span class="signal-cell">${escapeHTML(signal.destination || hp?.name || 'VIRTUAL DECOY')}</span><span class="signal-cell">${escapeHTML(signal.tactic)}</span><span class="severity severity--${escapeHTML(signal.severity)}">${escapeHTML(String(signal.severity).toUpperCase())}</span><span class="signal-cell">${acknowledged ? '<span class="signal-simulated">ACKNOWLEDGED</span>' : incident ? `<button class="ack-button" data-ack-incident="${escapeHTML(incident.id)}">ACKNOWLEDGE</button>` : '<span class="signal-simulated">CAPTURED</span>'}</span></div>`;
@@ -671,7 +759,7 @@
 
   function runDetails(run) {
     const details = run.details && Object.keys(run.details).length ? JSON.stringify(run.details, null, 2) : run.error || 'No additional details.';
-    return `<details class="tool-run-details"><summary>DETAILS ↗</summary><pre>${escapeHTML(details)}</pre></details>`;
+    return `<details class="tool-run-details" data-run-id="${escapeHTML(run.id)}"><summary>DETAILS ↗</summary><pre>${escapeHTML(details)}</pre></details>`;
   }
 
   function renderTools() {
@@ -689,11 +777,13 @@
     $('#toolGrid').innerHTML = filtered.length ? filtered.map(toolCard).join('') : '<div class="empty-state">NO MODULES MATCH THIS FILTER</div>';
     $$('.atlas-filters .filter-tab').forEach((tab) => tab.classList.toggle('filter-tab--active', tab.dataset.toolFilter === toolFilter));
     const runs = Array.isArray(toolsState.runs) ? toolsState.runs : [];
+    const openRuns = new Set($$('#toolRunLog details[open]').map((item) => item.dataset.runId));
     $('#toolRunCount').textContent = `${runs.length} RUNS`;
     $('#toolRunLog').innerHTML = runs.slice(0, 20).map((run) => {
       const tool = allTools.find((item) => item.id === run.tool_id);
       return `<article class="tool-run-row"><span class="tool-run-icon">${escapeHTML(tool?.icon || '◈')}</span><div><strong>${escapeHTML(tool?.name || run.tool_id)}</strong><span>${escapeHTML(run.action)} · ${escapeHTML(run.mode)} · ${formatTime(run.completed_at, true)}</span><p>${escapeHTML(run.summary)}</p>${runDetails(run)}</div><b class="tool-run-status tool-run-status--${escapeHTML(run.status)}">${escapeHTML(run.status.toUpperCase())}</b></article>`;
     }).join('') || '<div class="empty-state">NO TOOL RUNS YET — START WITH A SAFE AUDIT</div>';
+    $$('#toolRunLog details[data-run-id]').forEach((item) => { if (openRuns.has(item.dataset.runId)) item.open = true; });
   }
 
   async function loadToolsAndState() {
@@ -750,9 +840,9 @@
 
   function renderDriftReadouts() {
     const stats = state.stats || {};
-    $('#driftSignalCount').textContent = String(stats.signals_today || 0).padStart(3, '0');
+    $('#driftSignalCount').textContent = String(signalTotal(stats)).padStart(3, '0');
     $('#driftIncidentCount').textContent = String(stats.open_incidents || 0).padStart(2, '0');
-    $('#driftMeshCount').textContent = `${Math.round(((stats.online_agents || 0) / Math.max(stats.total_agents || 1, 1)) * 100)}%`;
+    $('#driftMeshCount').textContent = `${meshOnlinePercent(stats)}%`;
     $('#driftHoneypotCount').textContent = String(stats.active_honeypots || 0).padStart(2, '0');
   }
 
@@ -773,20 +863,21 @@
     renderTabGuide(currentView);
     if (currentView === 'ops') loadOpsOverview(false);
     if (currentView === 'tools') loadTools(false);
-    if (currentView === 'drift') startDriftCanvas();
+    if (currentView === 'drift') startDriftCanvas(); else stopDriftCanvas();
   }
 
   function enterCockpit(view = 'command') {
     $('#startScreen').classList.add('is-hidden');
     $('#appView').classList.remove('is-hidden');
     setView(view);
-    window.scrollTo({ top: 0, behavior: motionPreferred ? 'smooth' : 'auto' });
+    window.scrollTo({ top: 0, behavior: motionAllowed() ? 'smooth' : 'auto' });
   }
 
   function openModal(name) {
     const backdrop = $('#modalBackdrop');
     const modal = $(`#${name}Modal`);
     if (!modal) return;
+    if (backdrop.classList.contains('is-hidden')) modalReturnFocus = document.activeElement;
     backdrop.classList.remove('is-hidden');
     $$('.modal', backdrop).forEach((item) => item.classList.add('is-hidden'));
     modal.classList.remove('is-hidden');
@@ -795,8 +886,31 @@
   }
 
   function closeModal() {
-    $('#modalBackdrop').classList.add('is-hidden');
-    $$('.modal', $('#modalBackdrop')).forEach((modal) => modal.classList.add('is-hidden'));
+    const backdrop = $('#modalBackdrop');
+    const wasOpen = !backdrop.classList.contains('is-hidden');
+    backdrop.classList.add('is-hidden');
+    $$('.modal', backdrop).forEach((modal) => modal.classList.add('is-hidden'));
+    if (wasOpen && modalReturnFocus && document.contains(modalReturnFocus)) modalReturnFocus.focus({ preventScroll: true });
+    modalReturnFocus = null;
+  }
+
+  function activeDialog() {
+    if (!$('#prototypeBackdrop').classList.contains('is-hidden')) return $('.prototype-modal');
+    if (!$('#modalBackdrop').classList.contains('is-hidden')) return $('.modal:not(.is-hidden)', $('#modalBackdrop'));
+    return null;
+  }
+
+  function trapFocus(event) {
+    const dialog = activeDialog();
+    if (!dialog) return;
+    const focusable = $$('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])', dialog)
+      .filter((element) => element.getClientRects().length > 0);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const inside = dialog.contains(document.activeElement);
+    if (event.shiftKey && (!inside || document.activeElement === first)) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && (!inside || document.activeElement === last)) { event.preventDefault(); first.focus(); }
   }
 
   function randomSignalPayload() {
@@ -928,6 +1042,7 @@
     const stage = $('#prototypeStage');
     if (!stage || !motionPreferred) return;
     stage.addEventListener('pointermove', (event) => {
+      if (userReducedMotion) return;
       const bounds = stage.getBoundingClientRect();
       const x = (event.clientX - bounds.left) / bounds.width - .5;
       const y = (event.clientY - bounds.top) / bounds.height - .5;
@@ -945,6 +1060,7 @@
     const visual = $('.hero-visual');
     if (visual) {
       visual.addEventListener('pointermove', (event) => {
+        if (userReducedMotion) return;
         const bounds = visual.getBoundingClientRect();
         const x = (event.clientX - bounds.left) / bounds.width - .5;
         const y = (event.clientY - bounds.top) / bounds.height - .5;
@@ -958,6 +1074,7 @@
     }
     $$('.prototype-card').forEach((card) => {
       card.addEventListener('pointermove', (event) => {
+        if (userReducedMotion) return;
         const bounds = card.getBoundingClientRect();
         const x = (event.clientX - bounds.left) / bounds.width - .5;
         const y = (event.clientY - bounds.top) / bounds.height - .5;
@@ -971,11 +1088,11 @@
     });
   }
 
-  function startBackgroundCanvas() {
+  function createBackgroundRenderer() {
     const canvas = $('#signalCanvas');
-    if (!canvas || !motionPreferred) return;
+    if (!canvas) return null;
     const context = canvas.getContext('2d');
-    let width = 0; let height = 0; let particles = [];
+    let width = 0; let height = 0; let particles = []; let frame = 0;
     const resize = () => {
       const ratio = Math.min(window.devicePixelRatio || 1, 2);
       width = window.innerWidth; height = window.innerHeight;
@@ -995,18 +1112,22 @@
       context.beginPath();
       context.moveTo(pulseX, height * .12); context.lineTo(pulseX + 210, height * .88);
       context.strokeStyle = 'rgba(255,76,58,.05)'; context.lineWidth = 1; context.stroke();
-      backgroundFrame = window.requestAnimationFrame(draw);
     };
+    const loop = (time) => { draw(time); frame = window.requestAnimationFrame(loop); };
     window.addEventListener('resize', resize, { passive: true });
-    resize(); draw(0);
+    resize();
+    return {
+      start() { if (!frame) frame = window.requestAnimationFrame(loop); },
+      stop() { if (frame) window.cancelAnimationFrame(frame); frame = 0; context.clearRect(0, 0, width, height); }
+    };
   }
 
-  function startDriftCanvas() {
+  function createDriftRenderer() {
     const canvas = $('#driftCanvas');
-    if (!canvas || !motionPreferred || driftFrame) return;
+    if (!canvas) return null;
     const context = canvas.getContext('2d');
     const stage = canvas.parentElement;
-    let width = 0; let height = 0;
+    let width = 0; let height = 0; let frame = 0;
     const resize = () => {
       const ratio = Math.min(window.devicePixelRatio || 1, 2);
       width = stage.clientWidth; height = Math.max(300, window.innerWidth < 560 ? 390 : 480);
@@ -1027,13 +1148,54 @@
       context.fillStyle = '#e84635'; context.shadowColor = 'rgba(255,76,58,.65)'; context.shadowBlur = 22; context.beginPath(); context.arc(sunX, sunY, sunR, 0, Math.PI * 2); context.fill(); context.shadowBlur = 0;
       context.fillStyle = 'rgba(43,10,14,.38)'; for (let i = 0; i < 7; i += 1) context.fillRect(sunX - sunR, sunY - sunR + i * sunR * .28, sunR * 2, 4);
       stars.forEach((star) => { context.fillStyle = `rgba(112,243,242,${star.a * (.7 + .3 * Math.sin(time / 800 + star.x * 8))})`; context.beginPath(); context.arc(star.x * width, star.y * height, star.r, 0, Math.PI * 2); context.fill(); });
-      context.fillStyle = '#080b10'; context.beginPath(); context.moveTo(0, height * .69); skyline.forEach((building) => { const x = building.x * width; const h = building.h * height; context.lineTo(x, height * .69); context.lineTo(x, height * (.69 - h)); context.lineTo(x + building.w * width, height * (.69 - h)); context.lineTo(x + building.w * width, height * .69); }); context.lineTo(width, height); context.lineTo(0, height); context.closePath(); context.fill();
+      context.fillStyle = '#080b10'; context.beginPath(); context.moveTo(0, height * .69); skyline.forEach((building) => { const x = building.x * width; const h = building.h * height; context.lineTo(x, height * .69); context.lineTo(x, height * .69 - h); context.lineTo(x + building.w * width, height * .69 - h); context.lineTo(x + building.w * width, height * .69); }); context.lineTo(width, height); context.lineTo(0, height); context.closePath(); context.fill();
       skyline.forEach((building) => { const x = building.x * width; const top = height * (.69 - building.h); const windows = Math.max(1, Math.floor(building.h * 26)); context.fillStyle = building.hue === 'red' ? 'rgba(255,76,58,.42)' : 'rgba(112,243,242,.28)'; for (let i = 0; i < windows; i += 1) { const y = top + 6 + i * 9; if (y < height * .68) context.fillRect(x + 3, y, Math.max(1, building.w * width * .18), 1); } });
       context.strokeStyle = 'rgba(255,76,58,.27)'; context.lineWidth = 1; context.beginPath(); context.moveTo(0, height * .69); context.lineTo(width, height * .69); context.stroke();
       const sweepX = ((time / 35) % (width + 200)) - 100; context.strokeStyle = 'rgba(112,243,242,.13)'; context.beginPath(); context.moveTo(sweepX, 0); context.lineTo(sweepX - 90, height); context.stroke();
-      driftFrame = window.requestAnimationFrame(draw);
     };
-    window.addEventListener('resize', resize, { passive: true }); resize(); draw(0);
+    const loop = (time) => { draw(time); frame = window.requestAnimationFrame(loop); };
+    window.addEventListener('resize', () => {
+      if (currentView !== 'drift') return;
+      resize();
+      if (!frame) draw(0);
+    }, { passive: true });
+    return {
+      start() { resize(); if (!frame) frame = window.requestAnimationFrame(loop); },
+      still() { this.stop(); resize(); draw(0); },
+      stop() { if (frame) window.cancelAnimationFrame(frame); frame = 0; }
+    };
+  }
+
+  function startBackgroundCanvas() {
+    if (!backgroundRenderer) backgroundRenderer = createBackgroundRenderer();
+    if (!backgroundRenderer) return;
+    if (motionAllowed()) backgroundRenderer.start(); else backgroundRenderer.stop();
+  }
+
+  function startDriftCanvas() {
+    if (!driftRenderer) driftRenderer = createDriftRenderer();
+    if (!driftRenderer) return;
+    // Reduced motion still gets the scene — as a single still frame.
+    if (motionAllowed()) driftRenderer.start(); else driftRenderer.still();
+  }
+
+  function stopDriftCanvas() {
+    driftRenderer?.stop();
+  }
+
+  function applyMotionPreference(reduced, announce = false) {
+    userReducedMotion = reduced;
+    document.body.classList.toggle('reduce-motion', reduced);
+    const toggle = $('#motionToggle');
+    if (toggle) {
+      toggle.setAttribute('aria-pressed', reduced ? 'true' : 'false');
+      toggle.title = reduced ? 'Animationen aktivieren' : 'Animationen reduzieren';
+      toggle.setAttribute('aria-label', toggle.title);
+    }
+    try { window.localStorage.setItem('cyberguardian.reduceMotion', reduced ? '1' : '0'); } catch (_) { /* optional preference */ }
+    startBackgroundCanvas();
+    if (currentView === 'drift' && !$('#appView').classList.contains('is-hidden')) startDriftCanvas();
+    if (announce) toast(reduced ? 'Animationen pausiert.' : 'Animationen aktiviert.');
   }
 
   function bindEvents() {
@@ -1047,8 +1209,8 @@
     $$('.preview-agent').forEach((button) => button.addEventListener('click', () => handlePrototypeAgent(button.dataset.previewAgent)));
     $$('.preview-action').forEach((button) => button.addEventListener('click', () => handlePrototypeAction(button.dataset.previewAction)));
     $$('.preview-step').forEach((button) => button.addEventListener('click', () => handlePrototypeStep(button.dataset.previewStep)));
-    $('[data-scroll-prototypes]')?.addEventListener('click', () => $('#design-lab')?.scrollIntoView({ behavior: motionPreferred ? 'smooth' : 'auto' }));
-    $('#backToStart')?.addEventListener('click', () => { $('#appView').classList.add('is-hidden'); $('#startScreen').classList.remove('is-hidden'); window.scrollTo({ top: 0, behavior: 'auto' }); });
+    $('[data-scroll-prototypes]')?.addEventListener('click', () => $('#design-lab')?.scrollIntoView({ behavior: motionAllowed() ? 'smooth' : 'auto' }));
+    $('#backToStart')?.addEventListener('click', () => { stopDriftCanvas(); $('#appView').classList.add('is-hidden'); $('#startScreen').classList.remove('is-hidden'); window.scrollTo({ top: 0, behavior: 'auto' }); });
     $$('.nav-item').forEach((button) => button.addEventListener('click', () => setView(button.dataset.view)));
     $$('[data-view-link]').forEach((button) => button.addEventListener('click', () => { enterCockpit(currentView); setView(button.dataset.viewLink); }));
     $$('[data-plan-filter]').forEach((button) => button.addEventListener('click', () => { planFilter = button.dataset.planFilter; renderPlans(); }));
@@ -1064,7 +1226,10 @@
     });
     $$('[data-close-modal]').forEach((button) => button.addEventListener('click', closeModal));
     $('#modalBackdrop')?.addEventListener('click', (event) => { if (event.target === $('#modalBackdrop')) closeModal(); });
-    document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { if (!$('#prototypeBackdrop').classList.contains('is-hidden')) closePrototypePreview(); else closeModal(); } });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') { if (!$('#prototypeBackdrop').classList.contains('is-hidden')) closePrototypePreview(); else closeModal(); }
+      if (event.key === 'Tab') trapFocus(event);
+    });
     document.addEventListener('click', (event) => {
       const planButton = event.target.closest('[data-cycle-plan]');
       if (planButton) { event.preventDefault(); cyclePlan(planButton.dataset.cyclePlan); return; }
@@ -1083,7 +1248,7 @@
       const pot = state?.honeypots.find((item) => item.status === 'active');
       if (pot) { simulateSignal(pot.id); setView('drift'); } else toast('Signal Pulse benötigt einen aktiven virtuellen Decoy.', 'error');
     });
-    $('#motionToggle')?.addEventListener('click', () => { document.body.classList.toggle('reduce-motion'); toast(document.body.classList.contains('reduce-motion') ? 'Animationen pausiert.' : 'Animationen aktiviert.'); });
+    $('#motionToggle')?.addEventListener('click', () => applyMotionPreference(!userReducedMotion, true));
     $('#opsRefresh')?.addEventListener('click', () => loadOpsOverview(true));
     $('#runCapture')?.addEventListener('click', runCapture);
     $('#proxyCheck')?.addEventListener('click', checkProxy);
@@ -1117,7 +1282,9 @@
     updateClock(); window.setInterval(updateClock, 1000);
     startPrototypeInteraction();
     startLandingInteraction();
-    startBackgroundCanvas();
+    let storedReduced = false;
+    try { storedReduced = window.localStorage.getItem('cyberguardian.reduceMotion') === '1'; } catch (_) { /* optional preference */ }
+    applyMotionPreference(storedReduced);
     await loadState(true);
     window.setInterval(() => { if (!document.hidden) loadState(false); }, 8000);
   }
