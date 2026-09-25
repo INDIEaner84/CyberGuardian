@@ -18,19 +18,37 @@ anything.
 from __future__ import annotations
 
 import copy
+import ipaddress
 import json
 import os
 import secrets
+import tempfile
 import threading
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, List, Optional
 
 
+SCHEMA = "cyberguardian-control-plane-v1"
 PLAN_STATUSES = {"queued", "active", "blocked", "done"}
 PLAN_PRIORITIES = {"low", "normal", "high", "critical"}
 INCIDENT_STATUSES = {"open", "acknowledged"}
 SEVERITIES = {"low", "medium", "high", "critical"}
+LIST_KEYS = ("tool_runs", "agents", "plans", "honeypots", "incidents", "honeypot_logs", "messages", "activity")
+DICT_KEYS = ("settings", "tool_states")
+# Synthetic honeypot telemetry may only use documentation ranges (RFC 5737 / RFC 3849),
+# so demo data can never be mistaken for — or pointed at — a real host.
+DOCUMENTATION_NETWORKS = tuple(
+    ipaddress.ip_network(net) for net in ("192.0.2.0/24", "198.51.100.0/24", "203.0.113.0/24", "2001:db8::/32")
+)
+DEFAULT_SYNTHETIC_SOURCE = "198.51.100.24"
+
+
+class NotFoundError(KeyError):
+    """Raised when a referenced record does not exist (mapped to HTTP 404)."""
+
+    def __str__(self) -> str:
+        return str(self.args[0]) if self.args else "Nicht gefunden"
 
 
 def utc_now() -> datetime:
@@ -72,8 +90,10 @@ class ControlPlane:
     def __init__(self, store_path: Optional[os.PathLike[str] | str] = None):
         default_dir = Path(os.environ.get("CYBERGUARDIAN_DATA_DIR", Path.home() / ".cyberguardian"))
         self.store_path = Path(store_path) if store_path else default_dir / "control_plane.json"
-        self.store_path.parent.mkdir(parents=True, exist_ok=True)
+        # The state contains host observations (process names, ports, captures): owner-only.
+        self.store_path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         self._lock = threading.RLock()
+        self._state: Dict[str, Any] = {}
         self._state = self._load_or_seed()
 
     # ------------------------------------------------------------------
@@ -81,30 +101,69 @@ class ControlPlane:
     # ------------------------------------------------------------------
     def _load_or_seed(self) -> Dict[str, Any]:
         if self.store_path.exists():
+            reason = "corrupt"
             try:
                 with self.store_path.open("r", encoding="utf-8") as handle:
                     loaded = json.load(handle)
-                if isinstance(loaded, dict) and loaded.get("schema") == "cyberguardian-control-plane-v1":
-                    return loaded
-            except (OSError, json.JSONDecodeError, TypeError):
-                # A corrupt local state should never prevent the defensive UI
-                # from starting.  Keep the broken file for forensic review.
-                try:
-                    backup = self.store_path.with_suffix(".corrupt.json")
-                    self.store_path.replace(backup)
-                except OSError:
-                    pass
+                if isinstance(loaded, dict) and loaded.get("schema") == SCHEMA:
+                    return self._normalize(loaded)
+                reason = "unknown-schema"
+            except (OSError, UnicodeDecodeError, json.JSONDecodeError, TypeError):
+                pass
+            # A corrupt or foreign state file should never prevent the defensive
+            # UI from starting — but it must not be overwritten silently either.
+            # Keep it next to the new state for forensic review.
+            self._backup_store(reason)
         state = self._seed_state()
         self._persist(state)
         return state
 
+    def _backup_store(self, reason: str) -> Optional[Path]:
+        stamp = utc_now().strftime("%Y%m%dT%H%M%SZ")
+        backup = self.store_path.with_name(f"{self.store_path.stem}.{reason}-{stamp}{self.store_path.suffix}")
+        counter = 1
+        while backup.exists():
+            backup = self.store_path.with_name(f"{self.store_path.stem}.{reason}-{stamp}-{counter}{self.store_path.suffix}")
+            counter += 1
+        try:
+            self.store_path.replace(backup)
+        except OSError:
+            return None
+        return backup
+
+    @staticmethod
+    def _normalize(state: Dict[str, Any]) -> Dict[str, Any]:
+        """Repair missing or mistyped top-level collections from older/hand-edited files."""
+
+        for key in LIST_KEYS:
+            if not isinstance(state.get(key), list):
+                state[key] = []
+            state[key] = [item for item in state[key] if isinstance(item, dict)]
+        for key in DICT_KEYS:
+            if not isinstance(state.get(key), dict):
+                state[key] = {}
+        return state
+
     def _persist(self, state: Dict[str, Any]) -> None:
-        self.store_path.parent.mkdir(parents=True, exist_ok=True)
-        temporary = self.store_path.with_suffix(self.store_path.suffix + ".tmp")
-        with temporary.open("w", encoding="utf-8") as handle:
-            json.dump(state, handle, ensure_ascii=False, indent=2)
-            handle.write("\n")
-        temporary.replace(self.store_path)
+        self.store_path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        # mkstemp creates the file with 0600 and a unique name, so concurrent
+        # server processes never share (or clobber) a temporary file.
+        descriptor, temporary = tempfile.mkstemp(
+            dir=str(self.store_path.parent), prefix=f".{self.store_path.name}.", suffix=".tmp"
+        )
+        try:
+            with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+                json.dump(state, handle, ensure_ascii=False, indent=2)
+                handle.write("\n")
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temporary, self.store_path)
+        except BaseException:
+            try:
+                os.unlink(temporary)
+            except OSError:
+                pass
+            raise
 
     def _save(self) -> None:
         self._state["updated_at"] = iso()
@@ -114,7 +173,7 @@ class ControlPlane:
         now = utc_now()
         ago = lambda minutes: iso(now - timedelta(minutes=minutes))
         return {
-            "schema": "cyberguardian-control-plane-v1",
+            "schema": SCHEMA,
             "version": "0.3.0",
             "updated_at": iso(now),
             "settings": {
@@ -233,6 +292,7 @@ class ControlPlane:
             "incidents": [
                 {
                     "id": "INC-014",
+                    "signal_id": "SIG-014",
                     "honeypot_id": "HP-001",
                     "source": "203.0.113.42",
                     "tactic": "credential probe",
@@ -243,6 +303,7 @@ class ControlPlane:
                 },
                 {
                     "id": "INC-013",
+                    "signal_id": "SIG-013",
                     "honeypot_id": "HP-001",
                     "source": "198.51.100.19",
                     "tactic": "path discovery",
@@ -255,6 +316,7 @@ class ControlPlane:
             "honeypot_logs": [
                 {
                     "id": "SIG-014",
+                    "incident_id": "INC-014",
                     "honeypot_id": "HP-001",
                     "source": "203.0.113.42",
                     "destination": "KASA-API:2222",
@@ -266,6 +328,7 @@ class ControlPlane:
                 },
                 {
                     "id": "SIG-013",
+                    "incident_id": "INC-013",
                     "honeypot_id": "HP-001",
                     "source": "198.51.100.19",
                     "destination": "KASA-API:2222",
@@ -354,20 +417,41 @@ class ControlPlane:
         incidents = state.get("incidents", [])
         honeypots = state.get("honeypots", [])
         logs = state.get("honeypot_logs", [])
+        today = iso()[:10]
         return {
             "online_agents": sum(1 for agent in agents if agent.get("status") == "online"),
             "total_agents": len(agents),
             "active_plans": sum(1 for plan in plans if plan.get("status") == "active"),
             "open_incidents": sum(1 for incident in incidents if incident.get("status") == "open"),
             "active_honeypots": sum(1 for pot in honeypots if pot.get("status") == "active"),
-            "signals_today": len(logs),
+            "signals_today": sum(1 for log in logs if str(log.get("created_at", "")).startswith(today)),
+            "signals_total": len(logs),
         }
 
     # ------------------------------------------------------------------
     # Mutation helpers — every mutation is visible to every agent
     # ------------------------------------------------------------------
+    def _existing_ids(self) -> set:
+        ids = set()
+        for key in LIST_KEYS:
+            for item in self._state.get(key, []):
+                if isinstance(item, dict) and item.get("id") is not None:
+                    ids.add(str(item["id"]))
+        return ids
+
     def _new_id(self, prefix: str) -> str:
-        return f"{prefix}-{secrets.token_hex(2).upper()}"
+        """Return a short, human-friendly id that is unique within the current state."""
+
+        with self._lock:
+            existing = self._existing_ids()
+            for _ in range(64):
+                candidate = f"{prefix}-{secrets.token_hex(2).upper()}"
+                if candidate not in existing:
+                    return candidate
+            while True:  # 16-bit space exhausted or unlucky: widen instead of colliding
+                candidate = f"{prefix}-{secrets.token_hex(4).upper()}"
+                if candidate not in existing:
+                    return candidate
 
     def _activity(self, kind: str, text: str, tone: str = "cyan") -> None:
         self._state.setdefault("activity", []).insert(
@@ -400,7 +484,7 @@ class ControlPlane:
         clean_role = _clean(role, "defensive observer", 80)
         clean_focus = _clean(focus, "shared context", 100)
         with self._lock:
-            existing = next((a for a in self._state["agents"] if a["name"] == clean_name), None)
+            existing = next((a for a in self._state["agents"] if a.get("name") == clean_name), None)
             if existing:
                 existing.update({"role": clean_role, "focus": clean_focus, "status": "online", "last_seen": iso()})
                 agent = existing
@@ -429,7 +513,7 @@ class ControlPlane:
         created_by: Any = "OPERATOR",
     ) -> Dict[str, Any]:
         plan = {
-            "id": self._new_id("PLN"),
+            "id": "",
             "title": _clean(title, "Untitled defensive plan", 90),
             "objective": _clean(objective, "Defensive task without network action.", 240),
             "owner": _clean(owner, "ORBIT", 32).upper(),
@@ -444,6 +528,7 @@ class ControlPlane:
         if plan["priority"] not in PLAN_PRIORITIES:
             plan["priority"] = "normal"
         with self._lock:
+            plan["id"] = self._new_id("PLN")
             self._state["plans"].insert(0, plan)
             self._message(
                 plan["owner"],
@@ -457,9 +542,9 @@ class ControlPlane:
 
     def update_plan(self, plan_id: str, status: Any = None, progress: Any = None) -> Dict[str, Any]:
         with self._lock:
-            plan = next((p for p in self._state["plans"] if p["id"] == plan_id), None)
+            plan = next((p for p in self._state["plans"] if p.get("id") == plan_id), None)
             if not plan:
-                raise KeyError(f"Plan nicht gefunden: {plan_id}")
+                raise NotFoundError(f"Plan nicht gefunden: {plan_id}")
             if status is not None:
                 next_status = _clean(status, plan["status"], 16).lower()
                 if next_status not in PLAN_STATUSES:
@@ -488,7 +573,7 @@ class ControlPlane:
         if not 1 <= numeric_port <= 65535:
             raise ValueError("Port muss zwischen 1 und 65535 liegen")
         honeypot = {
-            "id": self._new_id("HP"),
+            "id": "",
             "name": _clean(name, "UNNAMED-DECOY", 40).upper(),
             "service": _clean(service, "generic decoy", 60),
             "port": numeric_port,
@@ -500,6 +585,7 @@ class ControlPlane:
             "last_signal": None,
         }
         with self._lock:
+            honeypot["id"] = self._new_id("HP")
             self._state["honeypots"].insert(0, honeypot)
             self._message("KAI", "ALL AGENTS", f"{honeypot['id']} ist als virtuelle Deception-Zone bereit.", "honeypot")
             self._activity("honeypot.created", f"{honeypot['name']} erstellt — nur Simulation, kein Listener.", "green")
@@ -508,9 +594,9 @@ class ControlPlane:
 
     def toggle_honeypot(self, honeypot_id: str, active: Any = True) -> Dict[str, Any]:
         with self._lock:
-            honeypot = next((p for p in self._state["honeypots"] if p["id"] == honeypot_id), None)
+            honeypot = next((p for p in self._state["honeypots"] if p.get("id") == honeypot_id), None)
             if not honeypot:
-                raise KeyError(f"Honeypot nicht gefunden: {honeypot_id}")
+                raise NotFoundError(f"Honeypot nicht gefunden: {honeypot_id}")
             if isinstance(active, str):
                 is_active = active.strip().lower() in {"1", "true", "yes", "on", "active"}
             else:
@@ -524,28 +610,49 @@ class ControlPlane:
             self._save()
             return copy.deepcopy(honeypot)
 
+    @staticmethod
+    def _synthetic_source(source: Any) -> str:
+        """Validate that demo telemetry only uses documentation address ranges."""
+
+        text = _clean(source, DEFAULT_SYNTHETIC_SOURCE, 64)
+        try:
+            address = ipaddress.ip_address(text)
+        except ValueError:
+            address = None
+        if address is None or not any(address in network for network in DOCUMENTATION_NETWORKS):
+            raise ValueError(
+                "Synthetische Quelle muss eine Dokumentationsadresse sein "
+                "(192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24 oder 2001:db8::/32)"
+            )
+        return str(address)
+
     def simulate_signal(
         self,
         honeypot_id: str,
-        source: Any = "198.51.100.24",
+        source: Any = DEFAULT_SYNTHETIC_SOURCE,
         tactic: Any = "banner check",
         severity: Any = "medium",
     ) -> Dict[str, Any]:
-        """Add harmless, explicit demo telemetry to a virtual honeypot."""
+        """Add harmless, explicit demo telemetry to an *active* virtual honeypot."""
 
         severity_value = _clean(severity, "medium", 16).lower()
         if severity_value not in SEVERITIES:
             severity_value = "medium"
+        clean_source = self._synthetic_source(source)
         with self._lock:
-            honeypot = next((p for p in self._state["honeypots"] if p["id"] == honeypot_id), None)
+            honeypot = next((p for p in self._state["honeypots"] if p.get("id") == honeypot_id), None)
             if not honeypot:
-                raise KeyError(f"Honeypot nicht gefunden: {honeypot_id}")
+                raise NotFoundError(f"Honeypot nicht gefunden: {honeypot_id}")
+            if honeypot.get("status") != "active":
+                raise ValueError(f"{honeypot.get('name', honeypot_id)} ist im Standby — zuerst aktivieren (Simulation).")
             timestamp = iso()
-            clean_source = _clean(source, "198.51.100.24", 64)
             clean_tactic = _clean(tactic, "banner check", 80)
             signal_number = int(honeypot.get("signals", 0)) + 1
+            signal_id = self._new_id("SIG")
+            incident_id = self._new_id("INC")
             signal = {
-                "id": self._new_id("SIG"),
+                "id": signal_id,
+                "incident_id": incident_id,
                 "honeypot_id": honeypot_id,
                 "source": clean_source,
                 "destination": f"{honeypot['name']}:{honeypot['port']}",
@@ -556,7 +663,8 @@ class ControlPlane:
                 "created_at": timestamp,
             }
             incident = {
-                "id": self._new_id("INC"),
+                "id": incident_id,
+                "signal_id": signal_id,
                 "honeypot_id": honeypot_id,
                 "source": clean_source,
                 "tactic": clean_tactic,
@@ -587,9 +695,9 @@ class ControlPlane:
 
     def acknowledge_incident(self, incident_id: str) -> Dict[str, Any]:
         with self._lock:
-            incident = next((i for i in self._state["incidents"] if i["id"] == incident_id), None)
+            incident = next((i for i in self._state["incidents"] if i.get("id") == incident_id), None)
             if not incident:
-                raise KeyError(f"Incident nicht gefunden: {incident_id}")
+                raise NotFoundError(f"Incident nicht gefunden: {incident_id}")
             incident["status"] = "acknowledged"
             incident["acknowledged_at"] = iso()
             self._activity("incident.ack", f"{incident_id} von der Leitstelle bestätigt.", "green")
@@ -635,7 +743,7 @@ class ControlPlane:
         if not isinstance(run, dict) or not _clean(run.get("tool_id"), "", 60):
             raise ValueError("Ungültiger Tool-Run")
         entry = copy.deepcopy(run)
-        entry["id"] = _clean(entry.get("id"), self._new_id("RUN"), 60)
+        entry["id"] = _clean(entry.get("id"), "", 60)
         entry["tool_id"] = _clean(entry.get("tool_id"), "unknown", 60)
         entry["action"] = _clean(entry.get("action"), "read", 60)
         entry["status"] = _clean(entry.get("status"), "completed", 24)
@@ -643,6 +751,8 @@ class ControlPlane:
         entry["summary"] = _clean(entry.get("summary"), "No summary", 220)
         entry["safe"] = bool(entry.get("safe", True))
         with self._lock:
+            if not entry["id"] or entry["id"] in self._existing_ids():
+                entry["id"] = self._new_id("RUN")
             self._state.setdefault("tool_runs", []).insert(0, entry)
             self._state["tool_runs"] = self._state["tool_runs"][:120]
             tone = "green" if entry["status"] == "completed" else "yellow"
@@ -674,4 +784,4 @@ class ControlPlane:
             return copy.deepcopy(event)
 
 
-__all__ = ["ControlPlane"]
+__all__ = ["ControlPlane", "NotFoundError", "DOCUMENTATION_NETWORKS"]

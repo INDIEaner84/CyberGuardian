@@ -12,15 +12,15 @@ from __future__ import annotations
 
 import os
 import platform
-import re
 import shutil
 import socket
 import subprocess
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
+from .control_plane import NotFoundError
 from .defense_ops import DefenseOps
 
 
@@ -31,6 +31,24 @@ def _now() -> str:
 def _clean(value: Any, default: str = "", limit: int = 220) -> str:
     text = " ".join(str(value if value is not None else "").strip().split())
     return text[:limit] if text else default
+
+
+def _data_dir() -> Path:
+    """Same data directory as :class:`ControlPlane` (honours CYBERGUARDIAN_DATA_DIR)."""
+
+    return Path(os.environ.get("CYBERGUARDIAN_DATA_DIR", Path.home() / ".cyberguardian"))
+
+
+def _decode_proc_address(hex_address: str) -> str:
+    """Decode the little-endian hex address used by /proc/net/tcp{,6}."""
+
+    raw = bytes.fromhex(hex_address)
+    if len(raw) == 4:
+        return socket.inet_ntop(socket.AF_INET, raw[::-1])
+    if len(raw) == 16:
+        words = b"".join(raw[index:index + 4][::-1] for index in range(0, 16, 4))
+        return socket.inet_ntop(socket.AF_INET6, words)
+    raise ValueError("unexpected address length")
 
 
 class ToolCatalog:
@@ -191,7 +209,7 @@ class ToolCatalog:
         elif tool_id == "router_tools":
             availability, status = bool(shutil.which("ip")), "ready" if shutil.which("ip") else "limited"
         elif tool_id == "file_integrity":
-            baseline = Path.home() / ".cyberguardian" / "baseline.json"
+            baseline = _data_dir() / "baseline.json"
             availability, status = baseline.exists(), "ready" if baseline.exists() else "limited"
         elif tool_id == "backup_rollback":
             availability, status = True, "ready"
@@ -214,24 +232,45 @@ class ToolCatalog:
             output.append(item)
         return output
 
+    def has_tool(self, tool_id: Any) -> bool:
+        clean_tool = _clean(tool_id, "", 60)
+        return any(item["id"] == clean_tool for item in self._definitions)
+
     def _interfaces(self) -> List[str]:
         return self.defense_ops.interfaces()
 
-    def _listening_ports(self) -> List[Dict[str, Any]]:
+    @staticmethod
+    def _parse_proc_net_tcp(text: str, protocol: str = "TCP", source: str = "/proc/net/tcp") -> List[Dict[str, Any]]:
+        """Return LISTEN sockets (state 0A) with human-readable addresses."""
+
         ports: List[Dict[str, Any]] = []
-        proc_file = Path("/proc/net/tcp")
-        if proc_file.exists():
-            for line in proc_file.read_text(encoding="ascii", errors="ignore").splitlines()[1:]:
-                fields = line.split()
-                if len(fields) < 4 or fields[3] != "0A":
-                    continue
-                try:
-                    port = int(fields[1].rsplit(":", 1)[1], 16)
-                    address = fields[1].split(":", 1)[0]
-                    ports.append({"address": address, "port": port, "protocol": "TCP", "source": "/proc"})
-                except (ValueError, IndexError):
-                    continue
-        return ports[:24]
+        for line in text.splitlines()[1:]:
+            fields = line.split()
+            if len(fields) < 4 or fields[3] != "0A":
+                continue
+            try:
+                hex_address, hex_port = fields[1].rsplit(":", 1)
+                ports.append({
+                    "address": _decode_proc_address(hex_address),
+                    "port": int(hex_port, 16),
+                    "protocol": protocol,
+                    "source": source,
+                })
+            except (ValueError, OSError):
+                continue
+        return ports
+
+    def _listening_ports(self, proc_root: Path = Path("/proc/net")) -> List[Dict[str, Any]]:
+        ports: List[Dict[str, Any]] = []
+        for filename, protocol in (("tcp", "TCP"), ("tcp6", "TCP6")):
+            proc_file = proc_root / filename
+            try:
+                text = proc_file.read_text(encoding="ascii", errors="ignore")
+            except OSError:
+                continue
+            ports.extend(self._parse_proc_net_tcp(text, protocol, str(proc_file)))
+        unique = {(item["protocol"], item["address"], item["port"]): item for item in ports}
+        return sorted(unique.values(), key=lambda item: (item["port"], item["protocol"], item["address"]))[:24]
 
     def _process_snapshot(self) -> List[Dict[str, Any]]:
         processes: List[Dict[str, Any]] = []
@@ -273,14 +312,14 @@ class ToolCatalog:
         if tool_id == "ids_ips" and action == "detection_posture":
             return {"mode": "simulation", "summary": "Defensive Watch-Posture dokumentiert; keine Blockregel aktiviert.", "details": {"posture": "observe", "response": "none", "sensor": "browser-safe simulation"}}
         if tool_id == "file_integrity" and action == "baseline_status":
-            baseline = Path.home() / ".cyberguardian" / "baseline.json"
+            baseline = _data_dir() / "baseline.json"
             exists = baseline.exists()
             size = baseline.stat().st_size if exists else 0
             return {"mode": "read-only", "summary": "Baseline gefunden." if exists else "Keine Baseline gefunden.", "details": {"path": str(baseline), "exists": exists, "bytes": size}}
         if tool_id == "forensics" and action == "system_snapshot":
             return {"mode": "read-only", "summary": "Lokale Triage-Fakten gesammelt.", "details": {"os": f"{platform.system()} {platform.release()}", "hostname": socket.gethostname(), "python": platform.python_version(), "cwd": os.getcwd()}}
         if tool_id == "backup_rollback" and action == "backup_inventory":
-            backup_dir = Path.home() / ".cyberguardian" / "backups"
+            backup_dir = _data_dir() / "backups"
             files = sorted(item.name for item in backup_dir.iterdir() if item.is_file()) if backup_dir.exists() else []
             return {"mode": "read-only", "summary": f"{len(files)} lokale Backups gefunden.", "details": {"directory": str(backup_dir), "files": files[:40]}}
         if tool_id == "action_logger" and action == "audit_inventory":
@@ -304,7 +343,7 @@ class ToolCatalog:
         clean_action = _clean(action, "", 60)
         definition = next((item for item in self._definitions if item["id"] == clean_tool), None)
         if not definition:
-            raise KeyError(f"Tool nicht gefunden: {clean_tool}")
+            raise NotFoundError(f"Tool nicht gefunden: {clean_tool}")
         if clean_action not in {item["id"] for item in definition["actions"]}:
             raise ValueError("Tool-Aktion nicht erlaubt")
         started = _now()
