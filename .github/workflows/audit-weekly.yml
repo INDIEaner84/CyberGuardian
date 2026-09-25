@@ -18,7 +18,6 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
       contents: write
       pull-requests: write
       issues: write
@@ -41,8 +40,12 @@ jobs:
         uses: anomalyco/opencode/github@latest
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           model: openrouter/google/gemini-2.5-flash
+          # Workflow token instead of the OpenCode GitHub App exchange, which failed on
+          # every run with "App token exchange failed: 502" (app not installed on the repo).
+          use_github_token: true
           prompt: |
             Führe einen vollständigen wöchentlichen Audit durch.
             

@@ -8,7 +8,6 @@ jobs:
   review:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
       contents: read
       pull-requests: write
     steps:
@@ -21,8 +20,12 @@ jobs:
         uses: anomalyco/opencode/github@latest
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           model: openrouter/google/gemini-2.5-flash
+          # Workflow token instead of the OpenCode GitHub App exchange, which failed on
+          # every run with "App token exchange failed: 502" (app not installed on the repo).
+          use_github_token: true
           prompt: |
             Reviewe diesen Pull Request (PR #${{ github.event.pull_request.number }}):
             

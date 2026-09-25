@@ -8,7 +8,7 @@ CyberGuardian ist eine lokale, defensive Security-Suite für Menschen und spezia
 
 ## GitHub Pages veröffentlichen
 
-Die statische Projektseite liegt in `docs/` und benötigt keinen Python-Server. In GitHub unter **Settings → Pages** als Quelle **Deploy from a branch** wählen, den Branch `arena/01a053ed-cyberguardian` (nach dem Merge alternativ `main`) und den Ordner `/docs` auswählen. Danach ist die Seite unter `https://indieaner84.github.io/CyberGuardian/` erreichbar.
+Die statische Projektseite liegt in `docs/` und benötigt keinen Python-Server. In GitHub unter **Settings → Pages** als Quelle **Deploy from a branch** wählen, den Branch `main` und den Ordner `/docs` auswählen. Danach ist die Seite unter `https://indieaner84.github.io/CyberGuardian/` erreichbar.
 
 Der zentrale **Control Plane** ist die **Single Source of Truth**: Eine Absicht wird einmal als Plan angelegt, von zuständigen Agenten übernommen, mit sicheren Beobachtungen angereichert und als nachvollziehbarer nächster Schritt an das Team verteilt. So bleibt sichtbar, wer was vorhat, warum es passiert, welcher Status gilt und was als Nächstes zu tun ist.
 
@@ -109,13 +109,32 @@ python3 server.py
 
 Danach öffnen: <http://localhost:4173>
 
-Für die Arena-/Container-Vorschau:
+Der Server lauscht standardmäßig nur auf `127.0.0.1`, verwendet relative API-URLs und benötigt für das Browser-Cockpit keine Python-Drittanbieterpakete. Schriften (Barlow Condensed, Space Mono; SIL OFL) liegen in `web/fonts/` – es gibt keine CDN-Aufrufe. Mit `Ctrl+C` beenden.
+
+Für eine Container- oder Preview-Umgebung (z. B. Arena/e2b) muss der Server explizit nach außen gebunden und der Preview-Host erlaubt werden:
 
 ```bash
-python3 server.py --host 0.0.0.0 --port 4173
+python3 server.py --host 0.0.0.0 --port 4173 --allowed-host '*.e2b.app'
+# oder per Umgebung: CYBERGUARDIAN_ALLOWED_HOSTS="cockpit.lan,*.e2b.app"
 ```
 
-Der Server akzeptiert den Preview-Host, verwendet relative API-URLs und benötigt für das Browser-Cockpit keine Python-Drittanbieterpakete. Mit `Ctrl+C` beenden.
+### Browser-Sicherheit des Cockpits
+
+Das Cockpit hat **keinen Login**. Damit eine fremde Webseite im selben Browser trotzdem nichts auslösen kann, gilt:
+
+- **Nur lokal per Default** — ohne `--host` wird an `127.0.0.1` gebunden. Bei `0.0.0.0` gibt der Server eine Warnung aus; dann nur in vertrauenswürdigen Netzen oder hinter einem authentifizierenden Proxy betreiben.
+- **CSRF-Schutz** — `POST`/`PATCH` verlangen `Content-Type: application/json` (sonst `415`) und werden bei `Sec-Fetch-Site: cross-site/same-site` bzw. fremdem `Origin` mit `403` abgelehnt.
+- **DNS-Rebinding-Schutz** — erlaubt sind nur `localhost`, IP-Adressen, der eigene Hostname und per `--allowed-host` freigegebene Namen (Wildcards wie `*.example.org`, `*` schaltet die Prüfung ab).
+- **Saubere Fehler** — unbekannte `/api/…`-Pfade liefern JSON-`404`, interne Fehler ein generisches `500` (Details nur im Server-Log), zu große Bodys `413`.
+- **Private Ablage** — die State-Datei wird mit Rechten `0600` atomar geschrieben (eindeutige Temp-Datei, `fsync`). Beschädigte oder fremde Dateien werden vor dem Neuaufbau als `*.corrupt-<zeit>.json` bzw. `*.unknown-schema-<zeit>.json` gesichert.
+
+Beispiel für Agenten/Skripte:
+
+```bash
+curl -X POST http://127.0.0.1:4173/api/messages \
+  -H 'Content-Type: application/json' \
+  -d '{"sender": "ORBIT", "recipient": "ALL AGENTS", "text": "Evidence Chain abgeschlossen."}'
+```
 
 ## Control-Plane- und Tool-API
 
@@ -129,7 +148,7 @@ Der Server akzeptiert den Preview-Host, verwendet relative API-URLs und benötig
 | `POST` | `/api/messages` | Kontextübergabe an Agenten oder den Mesh |
 | `POST` | `/api/honeypots` | Virtuellen Decoy erstellen |
 | `POST` | `/api/honeypots/<id>/toggle` | Decoy in Simulation aktivieren/pausieren |
-| `POST` | `/api/honeypots/<id>/simulate` | Synthetisches Testsignal erfassen |
+| `POST` | `/api/honeypots/<id>/simulate` | Synthetisches Testsignal an einem **aktiven** Decoy erfassen (nur Dokumentations-IPs) |
 | `POST` | `/api/incidents/<id>/ack` | Defensive Beobachtung quittieren |
 | `GET` | `/api/ops/overview` | Lokale Tool- und Interface-Fähigkeiten lesen |
 | `POST` | `/api/ops/capture` | Bounded Packet-Metadaten-Capture oder sichere Demo |
@@ -140,13 +159,24 @@ Der Server akzeptiert den Preview-Host, verwendet relative API-URLs und benötig
 | `POST` | `/api/tools/<id>/run` | Allowlistete Beobachtungsaktion ausführen und auditieren |
 | `POST` | `/api/tools/<id>/toggle` | Watch-Posture lokal aktivieren/pausieren |
 
-Die API führt keine beliebigen Shell-Befehle aus. Packet Capture ist auf wenige Sekunden und Metadatenzeilen begrenzt; MAC- und Proxychains-Aktionen verändern bzw. routen das System nicht.
+Die API führt keine beliebigen Shell-Befehle aus. Packet Capture ist auf wenige Sekunden und Metadatenzeilen begrenzt; MAC- und Proxychains-Aktionen verändern bzw. routen das System nicht. Mit `tshark` werden IPv4/IPv6-Adressen, TCP/UDP-Ports und das Protokoll gelesen; bei `tcpdump` wird jede Zeile auf Zeit, Endpunkte, Ports und Protokoll reduziert – DNS-Namen oder andere Inhalte landen nicht im Audit Trail.
 
 Für Tests kann ein eigener Speicherort verwendet werden:
 
 ```bash
 CYBERGUARDIAN_STATE_FILE=/tmp/cyberguardian-state.json python3 server.py
 ```
+
+## Tests
+
+Die Test-Suite kommt ohne Zusatzpakete aus (nur Standardbibliothek):
+
+```bash
+python3 -m unittest discover -s tests -v
+node --check web/app.js   # optional: Syntaxcheck des Frontends
+```
+
+Abgedeckt sind u. a. die HTTP-API gegen einen echten Server auf einem freien Port (Routing, Statuscodes, CSRF-, Host- und Pfad-Schutz, Body-Limits, HEAD, gebündelte Fonts), der Control Plane (Persistenz, Backups beschädigter Dateien, eindeutige IDs, Dateirechte, Honeypot-Regeln), der tshark/tcpdump-Parser inkl. Timeout-Verhalten sowie alle 15 allowlisteten Tool-Aktionen. Die GitHub Action `.github/workflows/tests.yml` führt die Suite bei jedem Push und Pull Request auf mehreren Python-Versionen aus.
 
 ## Projektstruktur
 
@@ -156,7 +186,8 @@ CyberGuardian/
 ├── web/
 │   ├── index.html          # Startmenü, Cockpit und Projektbrief
 │   ├── styles.css          # Cyberpunk-HUD, Animationen, responsive Layout
-│   └── app.js              # Interaktionen, Rendering und API-Client
+│   ├── app.js              # Interaktionen, Rendering und API-Client
+│   └── fonts/              # selbst gehostete Schriften (SIL OFL 1.1)
 ├── core/
 │   ├── control_plane.py    # Single Source of Do / atomare Zustandsablage
 │   ├── defense_ops.py      # allowlisted Capture-, Proxy- und MAC-Inspektion
@@ -165,7 +196,7 @@ CyberGuardian/
 ├── main.py                 # CustomTkinter-Oberfläche
 ├── main_anime.py           # Dear-PyGui-Oberfläche
 ├── launcher.py             # Desktop-Abhängigkeitscheck und Browser-Shortcut
-├── tests/                  # Control-Plane-, Defense-Ops- und Katalogtests
+├── tests/                  # API-, Control-Plane-, Defense-Ops- und Katalogtests
 └── utils/                  # Logging, Backups und Konfiguration
 ```
 
@@ -184,7 +215,7 @@ Die Desktop-Oberflächen bleiben erhalten. Für das neue Browser-Cockpit sind Cu
 
 - Nur eigene oder ausdrücklich freigegebene Systeme beobachten.
 - Keine Angriffsautomatisierung, Exploits, Credential-Tests oder Gegenmaßnahmen aus dem Browser-Labor.
-- Synthetische Beispielquellen nutzen dokumentations-reservierte IP-Bereiche (`192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`).
+- Synthetische Beispielquellen nutzen dokumentations-reservierte IP-Bereiche (`192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`, `2001:db8::/32`) – die API lehnt andere Quellen ab.
 - Honeypots im Browser sind virtuelle Testobjekte und öffnen keine Ports.
 - Logs bleiben lokal und sind als `simulated`/`synthetic` gekennzeichnet.
 - Für produktive Sensorik sind Authentifizierung, Rollenrechte, Verschlüsselung, Rotation und ein separat gehärteter Collector erforderlich.

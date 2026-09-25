@@ -48,7 +48,7 @@ def check_command(cmd, name):
         subprocess.run([cmd, "--version"], capture_output=True, check=True)
         print(f"{Colors.GREEN}✓{Colors.END} {name} gefunden")
         return True
-    except:
+    except (OSError, subprocess.CalledProcessError):
         print(f"{Colors.RED}✗{Colors.END} {name} nicht gefunden")
         return False
 
@@ -193,7 +193,8 @@ def launch_customtkinter():
         # main.py uses ctk.CTk, so we need to handle that differently
         # For now, just show a message
         print(f"{Colors.GREEN}✓ Classic Edition startet...{Colors.END}")
-        os.system(f"{sys.executable} main.py")
+        main_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "main.py")
+        subprocess.run([sys.executable, main_path], check=False)  # no shell: paths with spaces stay intact
     except Exception as e:
         print(f"{Colors.RED}Fehler: {e}{Colors.END}")
 

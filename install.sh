@@ -40,15 +40,9 @@ if [ -f "requirements.txt" ]; then
     pip install --quiet -r requirements.txt
     echo -e "${GREEN}Python-Pakete installiert${NC}"
 else
-    # Fallback: Einzelne Installation
-    pip install --quiet customtkinter>=5.2.0
-    pip install --quiet psutil>=5.9.0
-    pip install --quiet scapy>=2.5.0
-    pip install --quiet python-nmap>=0.7.1
-    pip install --quiet netifaces>=0.11.0
-    pip install --quiet requests>=2.31.0
-    pip install --quiet mac-vendor-lookup>=0.1.15
-    pip install --quiet pyudev>=0.24.0
+    # Fallback: Einzelne Installation (Anführungszeichen nötig, sonst ist ">=" eine Shell-Umleitung)
+    pip install --quiet "customtkinter>=5.2.0" "dearpygui>=2.0.0" "psutil>=5.9.0" "scapy>=2.5.0" \
+        "python-nmap>=0.7.1" "netifaces>=0.11.0" "requests>=2.31.0" "mac-vendor-lookup>=0.1.15" "pyudev>=0.24.0"
 fi
 
 echo ""
