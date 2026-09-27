@@ -60,6 +60,22 @@ Unterhalb der sechs Cockpit-Einstiege befindet sich ein lokales **Design Lab**. 
 
 Agenten, Workflow-Schritte und Safe-Action-Previews sind im Prototyp anklickbar. **USE THIS DIRECTION** markiert eine lokale Präferenz in `localStorage`; die Produktionsoberfläche und der Control Plane werden dadurch nicht verändert. Erst nach einer bewussten Entscheidung werden die ausgewählten Gestaltungselemente in das eigentliche Cockpit übernommen.
 
+### Stilwelten: komplette Themes
+
+Unter den vier Studien liegen fünf **Stilwelten** – vollständige Themes für Startseite, Cockpit, Modals und Canvas:
+
+| Stilwelt | Charakter |
+| --- | --- |
+| **Enterprise** | LCARS-Brückenkonsole: schwarzes Feld, runde Ellbogen-Leisten, Pill-Buttons in Orange, Flieder und Eisblau (Antonio). |
+| **Akira** | Neo-Tokyo: Signalrot, Schwarz und Knochenweiß, Kapseln, Lichtspuren, kursive Speed-Headlines und Katakana. |
+| **Cyberpunk** | Street Chrome: Gelb `#FCEE0A`, Cyan und Warnrot, abgeschrägte Ecken, Glitch-Kanten, Warnstreifen (Chakra Petch). |
+| **Agentur** | Creative Studio: Papier, große Instrument-Serif-Headlines, viel Weißraum, ein Zinnober-Akzent, keine Glows. |
+| **U-Boot** | Kontrollraum: Phosphorgrün, Messing mit Nieten, Sonar-Sweeps, CRT-Ziffern (VT323), Stencil-Headlines und rotes Schleichfahrt-Licht. |
+
+**VORSCHAU** färbt die ganze Seite live zur Probe um (beim Schließen kehrt der vorherige Look zurück), **ANWENDEN** bzw. **DIESES THEME NUTZEN** speichert die Wahl in `localStorage` (`cyberguardian.theme`). Umschalten geht jederzeit über **STIL** im Startseiten-Header und in der Cockpit-Topbar; **STANDARD ↺** kehrt zu Nightwatch zurück. `web/theme-boot.js` setzt das gespeicherte Theme schon vor dem ersten Rendern, damit nichts aufblitzt.
+
+Technisch schreibt `web/styles.css` jede Farbe als `rgb(var(--<familie>-rgb, <originalwert>) / <alpha>)`. Im Standard-Look sind die Familien-Tokens nicht gesetzt, er bleibt pixelgenau erhalten; `web/themes.css` definiert pro Stilwelt die 13 Farbfamilien plus Form, Typografie und Dekor. `tests/test_themes.py` prüft, dass jede Stilwelt alle Familien definiert und Theme-Liste, Boot-Skript, Auswahlfelder und Karten übereinstimmen.
+
 Die Preview enthält außerdem eine **Wireshark Bridge**: Über den bestehenden, begrenzten Packet Observatory können Header-Metadaten aus `tshark` oder `tcpdump` geladen werden. Angezeigt werden nur Zeit, Quelle, Ziel, Ports und Protokoll — niemals Payload-Inhalte. Fehlt das lokale Tool, bleibt eine eindeutig markierte synthetische Demo sichtbar.
 
 ## Bekannte Tools im gemeinsamen Tool Atlas
@@ -109,7 +125,7 @@ python3 server.py
 
 Danach öffnen: <http://localhost:4173>
 
-Der Server lauscht standardmäßig nur auf `127.0.0.1`, verwendet relative API-URLs und benötigt für das Browser-Cockpit keine Python-Drittanbieterpakete. Schriften (Barlow Condensed, Space Mono; SIL OFL) liegen in `web/fonts/` – es gibt keine CDN-Aufrufe. Mit `Ctrl+C` beenden.
+Der Server lauscht standardmäßig nur auf `127.0.0.1`, verwendet relative API-URLs und benötigt für das Browser-Cockpit keine Python-Drittanbieterpakete. Schriften (Barlow Condensed, Space Mono und die Theme-Schriften; alle SIL OFL) liegen in `web/fonts/` – es gibt keine CDN-Aufrufe. Mit `Ctrl+C` beenden.
 
 Für eine Container- oder Preview-Umgebung (z. B. Arena/e2b) muss der Server explizit nach außen gebunden und der Preview-Host erlaubt werden:
 
@@ -173,10 +189,10 @@ Die Test-Suite kommt ohne Zusatzpakete aus (nur Standardbibliothek):
 
 ```bash
 python3 -m unittest discover -s tests -v
-node --check web/app.js   # optional: Syntaxcheck des Frontends
+node --check web/app.js web/theme-boot.js   # optional: Syntaxcheck des Frontends
 ```
 
-Abgedeckt sind u. a. die HTTP-API gegen einen echten Server auf einem freien Port (Routing, Statuscodes, CSRF-, Host- und Pfad-Schutz, Body-Limits, HEAD, gebündelte Fonts), der Control Plane (Persistenz, Backups beschädigter Dateien, eindeutige IDs, Dateirechte, Honeypot-Regeln), der tshark/tcpdump-Parser inkl. Timeout-Verhalten sowie alle 15 allowlisteten Tool-Aktionen. Die GitHub Action `.github/workflows/tests.yml` führt die Suite bei jedem Push und Pull Request auf mehreren Python-Versionen aus.
+Abgedeckt sind u. a. die HTTP-API gegen einen echten Server auf einem freien Port (Routing, Statuscodes, CSRF-, Host- und Pfad-Schutz, Body-Limits, HEAD, gebündelte Fonts), der Control Plane (Persistenz, Backups beschädigter Dateien, eindeutige IDs, Dateirechte, Honeypot-Regeln), der tshark/tcpdump-Parser inkl. Timeout-Verhalten alle 15 allowlisteten Tool-Aktionen sowie die Konsistenz der Stilwelten (Farbfamilien, Theme-IDs, gebündelte und lizenzierte Schriften). Die GitHub Action `.github/workflows/tests.yml` führt die Suite bei jedem Push und Pull Request auf mehreren Python-Versionen aus.
 
 ## Projektstruktur
 
@@ -185,7 +201,9 @@ CyberGuardian/
 ├── server.py               # dependency-freier Webserver + JSON-API
 ├── web/
 │   ├── index.html          # Startmenü, Cockpit und Projektbrief
-│   ├── styles.css          # Cyberpunk-HUD, Animationen, responsive Layout
+│   ├── styles.css          # Standard-Look (Nightwatch) mit Farb-Tokens, responsive Layout
+│   ├── themes.css          # fünf Stilwelten: Enterprise, Akira, Cyberpunk, Agentur, U-Boot
+│   ├── theme-boot.js       # setzt das gespeicherte Theme vor dem ersten Rendern
 │   ├── app.js              # Interaktionen, Rendering und API-Client
 │   └── fonts/              # selbst gehostete Schriften (SIL OFL 1.1)
 ├── core/

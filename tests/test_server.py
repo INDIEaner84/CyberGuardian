@@ -104,13 +104,15 @@ class ApiTests(ServerTestCase):
         self.assertIn(b"CYBERGUARDIAN", body)
         self.assertEqual(self.request("GET", "/styles.css")[2].getheader("Content-Type"), "text/css; charset=utf-8")
         self.assertIn("javascript", self.request("GET", "/app.js")[2].getheader("Content-Type"))
+        self.assertEqual(self.request("GET", "/themes.css")[2].getheader("Content-Type"), "text/css; charset=utf-8")
+        self.assertIn("javascript", self.request("GET", "/theme-boot.js")[2].getheader("Content-Type"))
         self.assertIn("text/html", self.request("GET", "/ops")[2].getheader("Content-Type"))
         self.assertEqual(self.request("GET", "/missing-file.js")[0], 404)
 
     def test_every_bundled_font_is_served(self):
-        css = (WEB_ROOT / "styles.css").read_text(encoding="utf-8")
-        fonts = re.findall(r"url\('(fonts/[^']+\.woff2)'\)", css)
-        self.assertGreaterEqual(len(fonts), 6)
+        css = "".join((WEB_ROOT / name).read_text(encoding="utf-8") for name in ("styles.css", "themes.css"))
+        fonts = sorted(set(re.findall(r"url\('(fonts/[^']+\.woff2)'\)", css)))
+        self.assertGreaterEqual(len(fonts), 19)
         for font in fonts:
             status, body, response = self.request("GET", f"/{font}")
             self.assertEqual(status, 200, font)

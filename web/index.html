@@ -8,7 +8,9 @@
   <title>CYBERGUARDIAN // CONTROL PLANE</title>
   <link rel="preload" href="/fonts/barlow-condensed-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/fonts/space-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <script src="/theme-boot.js"></script>
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/themes.css">
 </head>
 <body>
   <div class="ambient ambient-grid" aria-hidden="true"></div>
@@ -25,11 +27,14 @@
           <small>CONTROL PLANE / SOT-01</small>
         </span>
       </a>
-      <div class="landing-status">
-        <span class="status-dot status-dot--green"></span>
-        <span>DEFENSE MODE</span>
-        <span class="divider"></span>
-        <span class="mono">LOCAL ONLY</span>
+      <div class="landing-topline-right">
+        <div class="landing-status">
+          <span class="status-dot status-dot--green"></span>
+          <span>DEFENSE MODE</span>
+          <span class="divider"></span>
+          <span class="mono">LOCAL ONLY</span>
+        </div>
+        <label class="theme-switch"><span>STIL</span><select data-theme-select aria-label="Stilwelt wählen"><option value="nightwatch">NIGHTWATCH</option><option value="enterprise">ENTERPRISE</option><option value="akira">AKIRA</option><option value="cyberpunk">CYBERPUNK</option><option value="agentur">AGENTUR</option><option value="uboot">U-BOOT</option></select></label>
       </div>
     </header>
 
@@ -89,7 +94,7 @@
           <p class="eyebrow"><span class="eyebrow-line"></span>START MENU / SELECT A PROTOTYPE</p>
           <h2>WIE SOLL SICH<br><span>DEIN LEITSTAND</span> ANFÜHLEN?</h2>
         </div>
-        <p>Sechs Cockpit-Einstiege. Vier Designrichtungen. Ein gemeinsamer Datenkern. Wähle einen Einstieg — du kannst jederzeit im Cockpit wechseln.</p>
+        <p>Sechs Cockpit-Einstiege. Vier Designstudien, fünf Stilwelten. Ein gemeinsamer Datenkern. Wähle einen Einstieg — du kannst jederzeit im Cockpit wechseln.</p>
       </div>
 
       <div class="prototype-grid">
@@ -145,27 +150,66 @@
         <p class="design-lab-intro">Live UI studies für die nächste CyberGuardian-Runde. Der Datenkern bleibt identisch — nur Atmosphäre, Hierarchie und Interaktion werden hier gegeneinander getestet.</p>
         <div class="design-variant-grid">
           <button class="design-variant" data-design-variant="nightwatch" type="button">
-            <span class="variant-thumb variant-thumb--nightwatch" aria-hidden="true"><i></i><b></b><em></em><small>01 / SIGNAL DESK</small></span>
+            <span class="variant-thumb variant-thumb--nightwatch" data-theme="nightwatch" aria-hidden="true"><i></i><b></b><em></em><small>01 / SIGNAL DESK</small></span>
             <span class="design-variant-copy"><strong>NIGHTWATCH HUD</strong><small>Dichtes Neon-HUD mit Telemetrie, Scanlines und einer permanenten Signalbewegung.</small></span>
             <span class="design-variant-foot"><b>ATMOSPHERE</b><i>PREVIEW ↗</i></span>
           </button>
           <button class="design-variant" data-design-variant="orbit" type="button">
-            <span class="variant-thumb variant-thumb--orbit" aria-hidden="true"><i></i><b></b><em></em><small>02 / AGENT MESH</small></span>
+            <span class="variant-thumb variant-thumb--orbit" data-theme="nightwatch" aria-hidden="true"><i></i><b></b><em></em><small>02 / AGENT MESH</small></span>
             <span class="design-variant-copy"><strong>AGENT ORBIT</strong><small>Agenten kreisen um den gemeinsamen Control Plane. Kontext wird räumlich sichtbar.</small></span>
             <span class="design-variant-foot"><b>COORDINATION</b><i>PREVIEW ↗</i></span>
           </button>
           <button class="design-variant" data-design-variant="tactical" type="button">
-            <span class="variant-thumb variant-thumb--tactical" aria-hidden="true"><i></i><b></b><em></em><small>03 / OPERATOR VIEW</small></span>
+            <span class="variant-thumb variant-thumb--tactical" data-theme="nightwatch" aria-hidden="true"><i></i><b></b><em></em><small>03 / OPERATOR VIEW</small></span>
             <span class="design-variant-copy"><strong>TACTICAL CONSOLE</strong><small>Ruhiger, klarer SOC-Look für Entscheidungen, Filter, Shortcuts und Tagesbetrieb.</small></span>
             <span class="design-variant-foot"><b>CLARITY</b><i>PREVIEW ↗</i></span>
           </button>
           <button class="design-variant" data-design-variant="theatre" type="button">
-            <span class="variant-thumb variant-thumb--theatre" aria-hidden="true"><i></i><b></b><em></em><small>04 / SIGNAL STORY</small></span>
+            <span class="variant-thumb variant-thumb--theatre" data-theme="nightwatch" aria-hidden="true"><i></i><b></b><em></em><small>04 / SIGNAL STORY</small></span>
             <span class="design-variant-copy"><strong>INCIDENT THEATRE</strong><small>Defensive Abläufe als Timeline: vom synthetischen Signal bis zum Audit-Eintrag.</small></span>
             <span class="design-variant-foot"><b>WORKFLOW</b><i>PREVIEW ↗</i></span>
           </button>
         </div>
         <div class="design-lab-note"><span class="status-dot"></span><p><strong>WÄHLE ERST DIE RICHTUNG.</strong> Eine Markierung verändert noch nicht das Produktionsdesign. Wir kombinieren danach die stärksten Teile.</p><button id="clearPrototypeSelection" class="text-button" type="button">AUSWAHL LÖSCHEN ↺</button></div>
+        <div class="world-lab" aria-labelledby="worldLabTitle">
+          <div class="world-lab-heading">
+            <div><p class="eyebrow"><span class="eyebrow-line"></span>STILWELTEN / KOMPLETTE THEMES</p><h3 id="worldLabTitle">VON ENTERPRISE BIS <span>U-BOOT.</span></h3></div>
+            <div class="world-lab-status" role="status"><span>AKTIV</span><strong id="themeStatus">NIGHTWATCH</strong><button id="themeReset" class="text-button" type="button">STANDARD ↺</button></div>
+          </div>
+          <p class="world-lab-intro">Fünf vollständige Themes für Startseite und Cockpit. „Vorschau“ färbt alles live zur Probe um, „Anwenden“ behält den Look – umschaltbar jederzeit über STIL oben rechts oder hier zurück zu Nightwatch.</p>
+          <div class="world-grid">
+          <article class="world-card" data-theme="enterprise">
+            <div class="world-scene" aria-hidden="true"><i></i><b></b><em></em><span></span><small>SEKTION 47</small></div>
+            <div class="world-copy"><small>05 / LCARS-BRÜCKE</small><strong>ENTERPRISE</strong><p>Brückenkonsole im LCARS-Stil: schwarzes Feld, runde Ellbogen-Leisten, Orange, Flieder und Eisblau.</p></div>
+            <div class="world-palette" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="world-actions"><button type="button" data-theme-preview="enterprise" aria-label="Live-Vorschau ENTERPRISE">VORSCHAU ↗</button><button type="button" data-theme-apply="enterprise" aria-label="Stilwelt ENTERPRISE anwenden">ANWENDEN</button></div>
+          </article>
+          <article class="world-card" data-theme="akira">
+            <div class="world-scene" aria-hidden="true"><i></i><b></b><span>ネオトーキョー</span><em></em><small>CAPSULE 01</small></div>
+            <div class="world-copy"><small>06 / NEO-TOKYO</small><strong>AKIRA</strong><p>Signalrot, Schwarz und Knochenweiß. Kapseln, Lichtspuren und Katakana wie nachts auf dem Highway.</p></div>
+            <div class="world-palette" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="world-actions"><button type="button" data-theme-preview="akira" aria-label="Live-Vorschau AKIRA">VORSCHAU ↗</button><button type="button" data-theme-apply="akira" aria-label="Stilwelt AKIRA anwenden">ANWENDEN</button></div>
+          </article>
+          <article class="world-card" data-theme="cyberpunk">
+            <div class="world-scene" aria-hidden="true"><i></i><span>GRID//ONLINE</span><em></em><b></b><small>DATA SHARD 07</small></div>
+            <div class="world-copy"><small>07 / STREET CHROME</small><strong>CYBERPUNK</strong><p>Gelb auf Schwarz, dazu Cyan und Warnrot. Abgeschrägte Ecken, Glitch-Kanten und Warnstreifen.</p></div>
+            <div class="world-palette" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="world-actions"><button type="button" data-theme-preview="cyberpunk" aria-label="Live-Vorschau CYBERPUNK">VORSCHAU ↗</button><button type="button" data-theme-apply="cyberpunk" aria-label="Stilwelt CYBERPUNK anwenden">ANWENDEN</button></div>
+          </article>
+          <article class="world-card" data-theme="agentur">
+            <div class="world-scene" aria-hidden="true"><b></b><small>CASE STUDY — NO. 08</small><i></i><span>A<em>a</em></span></div>
+            <div class="world-copy"><small>08 / CREATIVE STUDIO</small><strong>AGENTUR</strong><p>Papier, große Serifen, viel Weißraum und genau ein Akzent. Das Cockpit als Case Study.</p></div>
+            <div class="world-palette" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="world-actions"><button type="button" data-theme-preview="agentur" aria-label="Live-Vorschau AGENTUR">VORSCHAU ↗</button><button type="button" data-theme-apply="agentur" aria-label="Stilwelt AGENTUR anwenden">ANWENDEN</button></div>
+          </article>
+          <article class="world-card" data-theme="uboot">
+            <div class="world-scene" aria-hidden="true"><i></i><b></b><em></em><span>TIEFE 120 M</span><small>SONAR AKTIV</small></div>
+            <div class="world-copy"><small>09 / KONTROLLRAUM</small><strong>U-BOOT</strong><p>Phosphorgrün, Messing und Nieten. Sonar-Sweep statt Neon, rotes Licht für die Schleichfahrt.</p></div>
+            <div class="world-palette" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="world-actions"><button type="button" data-theme-preview="uboot" aria-label="Live-Vorschau U-BOOT">VORSCHAU ↗</button><button type="button" data-theme-apply="uboot" aria-label="Stilwelt U-BOOT anwenden">ANWENDEN</button></div>
+          </article>
+          </div>
+        </div>
       </section>
     </section>
 
@@ -190,6 +234,7 @@
       <div class="topbar-right">
         <div class="sync-chip"><span class="status-dot status-dot--green"></span><span>PLANE SYNC</span><b id="syncState">LIVE</b></div>
         <div class="clock"><span id="clockTime">00:00:00</span><small>UTC</small></div>
+        <label class="theme-switch"><span>STIL</span><select data-theme-select aria-label="Stilwelt wählen"><option value="nightwatch">NIGHTWATCH</option><option value="enterprise">ENTERPRISE</option><option value="akira">AKIRA</option><option value="cyberpunk">CYBERPUNK</option><option value="agentur">AGENTUR</option><option value="uboot">U-BOOT</option></select></label>
         <button id="motionToggle" class="icon-button icon-button--quiet" title="Animationen reduzieren" aria-label="Animationen reduzieren">◌</button>
       </div>
     </header>

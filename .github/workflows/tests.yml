@@ -55,7 +55,7 @@ jobs:
           node-version: "22"
 
       - name: Check web/app.js syntax
-        run: node --check web/app.js
+        run: node --check web/app.js && node --check web/theme-boot.js
 
       - name: Check installer syntax
         run: bash -n install.sh

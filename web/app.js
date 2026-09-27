@@ -21,6 +21,8 @@
   let prototypeReturnFocus = null;
   let activePrototype = 'nightwatch';
   let selectedPrototype = null;
+  let appliedTheme = 'nightwatch';
+  let canvasPalette = null;
 
   const prototypeVariants = {
     nightwatch: {
@@ -62,6 +64,71 @@
       agents: { ORBIT: 'Szene 01: ORBIT verbindet das Signal mit dem gemeinsamen Plan.', SENTINEL: 'Szene 02: SENTINEL ordnet die Beobachtung defensiv ein.', KAI: 'Szene 03: KAI bestätigt den virtuellen Decoy und seine Logs.' },
       actions: { context: 'CONTEXT SCENE: Die beteiligten Rollen erscheinen direkt an der Timeline.', signal: 'SIGNAL TRACE: Der synthetische Event wird Schritt für Schritt nachvollziehbar.', safe: 'SAFE PREVIEW: Die Szene zeigt eine Entscheidung ohne reale Gegenmaßnahme.' },
       steps: { intent: 'SZENE 01 / INTENT: Das Ziel und die erlaubte Grenze werden gesetzt.', signal: 'SZENE 02 / SIGNAL: Der virtuelle Decoy empfängt ein synthetisches Ereignis.', audit: 'SZENE 03 / AUDIT: Die Beweiskette schließt den defensiven Ablauf.' }
+    }
+  };
+
+  // Style worlds: full themes for landing + cockpit (tokens live in themes.css).
+  // Keep in sync with theme-boot.js and the <select data-theme-select> options.
+  const THEME_IDS = ['nightwatch', 'enterprise', 'akira', 'cyberpunk', 'agentur', 'uboot'];
+  const themeMeta = {
+    nightwatch: { label: 'NIGHTWATCH', color: '#08090f' },
+    enterprise: { label: 'ENTERPRISE', color: '#000000' },
+    akira: { label: 'AKIRA', color: '#0a0708' },
+    cyberpunk: { label: 'CYBERPUNK', color: '#07060b' },
+    agentur: { label: 'AGENTUR', color: '#f4f1ea' },
+    uboot: { label: 'U-BOOT', color: '#030b08' }
+  };
+
+  const themeWorlds = {
+    enterprise: {
+      index: 'STILWELT / 05 · LCARS-BRÜCKE', title: 'ENTERPRISE', accent: 'BRIDGE',
+      description: 'Die Brückenkonsole: schwarzes Feld, runde Ellbogen-Leisten und Farbfelder in Orange, Flieder und Eisblau. Die Vorschau färbt gerade das ganze Cockpit zur Probe um.',
+      mode: 'CONDITION GREEN', traits: ['LCARS FRAMES', 'PILL CONTROLS', 'CALM CONTRAST'],
+      context: 'ALL DECKS REPORTING.', signal: 'SUBSPACE 47 / OBSERVE', plan: 'SENSOR SWEEP BASELINE',
+      initial: 'Brücke an alle Decks: Der Kontext steht. Klicke Agenten oder eine Konsole an.',
+      agents: { ORBIT: 'ORBIT hält die Brücke zusammen – Korrelation statt Alleingang.', SENTINEL: 'SENTINEL scannt die genehmigte Laborzone. Keine aktive Antwort.', KAI: 'KAI betreut den virtuellen Decoy auf dem Holodeck – reine Simulation.' },
+      actions: { context: 'CONTEXT: Die gemeinsame Lage liegt auf dem Hauptschirm.', signal: 'SIGNAL TRACE: Sensorspur von der Quelle über den Decoy bis ins Logbuch.', safe: 'SAFE PREVIEW: Nur beobachten – es wird keine Systemaktion ausgeführt.' },
+      steps: { intent: 'INTENT: Kurs setzen – ein defensives Ziel für alle Decks.', signal: 'SIGNAL: Die Sensoren melden einen synthetischen Kontakt.', audit: 'AUDIT: Logbucheintrag mit Zeit und Verantwortung.' }
+    },
+    akira: {
+      index: 'STILWELT / 06 · NEO-TOKYO', title: 'AKIRA', accent: 'NEO-TOKYO',
+      description: 'Signalrot, Schwarz und Knochenweiß. Kapseln, Lichtspuren und Katakana – der Leitstand als nächtlicher Highway.',
+      mode: 'NIGHT RUN / SIMULATION', traits: ['SIGNAL RED', 'CAPSULE UI', 'LIGHT TRAILS'],
+      context: 'THE CITY NEVER SLEEPS.', signal: 'SECTOR 7 / OBSERVE', plan: 'HIGHWAY BASELINE',
+      initial: 'Nachtfahrt durch den Mesh. Klicke Agenten oder eine Kapsel an.',
+      agents: { ORBIT: 'ORBIT fährt voraus und hält den Kontext zusammen.', SENTINEL: 'SENTINEL beobachtet Sektor 7 – nur genehmigte Zonen.', KAI: 'KAI hält den virtuellen Decoy warm. Signale bleiben synthetisch.' },
+      actions: { context: 'CONTEXT: Plan und Signal laufen nebeneinander wie zwei Spuren.', signal: 'SIGNAL TRACE: Eine rote Lichtspur verbindet Quelle, Decoy und Audit.', safe: 'SAFE PREVIEW: Vorbereitet, nicht ausgeführt – keine Gegenmaßnahme.' },
+      steps: { intent: 'INTENT: Ein defensives Ziel für die Nacht.', signal: 'SIGNAL: Ein synthetischer Hinweis blitzt auf.', audit: 'AUDIT: Die Spur bleibt als Beweis zurück.' }
+    },
+    cyberpunk: {
+      index: 'STILWELT / 07 · STREET CHROME', title: 'CYBER', accent: 'PUNK',
+      description: 'Gelb auf Schwarz, dazu Cyan und Warnrot. Abgeschrägte Ecken, Glitch-Kanten und Warnstreifen – laut, aber lesbar.',
+      mode: 'NET RUN / SANDBOXED', traits: ['HAZARD YELLOW', 'NOTCHED PANELS', 'GLITCH EDGES'],
+      context: 'JACK IN. STAY SAFE.', signal: 'SHARD 07 / OBSERVE', plan: 'GRID BASELINE',
+      initial: 'Grid online – alles bleibt in der Sandbox. Klicke Agenten oder ein Modul an.',
+      agents: { ORBIT: 'ORBIT routet den Kontext durchs Grid.', SENTINEL: 'SENTINEL hält die Firewall der Laborzone im Blick.', KAI: 'KAI füttert den Decoy mit synthetischem Traffic.' },
+      actions: { context: 'CONTEXT: Der Plan bleibt direkt neben dem Signal eingeblendet.', signal: 'SIGNAL TRACE: Eine Glitch-Spur läuft von der Quelle bis zum Audit.', safe: 'SAFE PREVIEW: Sandbox – keine echte Aktion, kein Gegenangriff.' },
+      steps: { intent: 'INTENT: Ziel markiert, Grenzen gesetzt.', signal: 'SIGNAL: Synthetischer Ping im Decoy.', audit: 'AUDIT: Der Datensplitter wird signiert abgelegt.' }
+    },
+    agentur: {
+      index: 'STILWELT / 08 · CREATIVE STUDIO', title: 'AGENTUR', accent: 'STUDIO',
+      description: 'Papier, große Serifen, viel Weißraum und genau ein Akzent. Das Cockpit liest sich wie eine Case Study.',
+      mode: 'CASE STUDY / DRAFT', traits: ['EDITORIAL TYPE', 'WHITESPACE', 'ONE ACCENT'],
+      context: 'Clarity is a feature.', signal: 'KAPITEL 02 / BEOBACHTUNG', plan: 'EDGE-LAYER BASELINE',
+      initial: 'Weniger Lärm, mehr Lage. Klicke Agenten oder einen Schritt an.',
+      agents: { ORBIT: 'ORBIT kuratiert den Kontext – eine Geschichte, ein Faden.', SENTINEL: 'SENTINEL beobachtet die Laborzone, ruhig und dokumentiert.', KAI: 'KAI liefert den Decoy als sauberes Fallbeispiel.' },
+      actions: { context: 'CONTEXT: Plan und Signal stehen wie Headline und Subline.', signal: 'SIGNAL TRACE: Der Ablauf wird Kapitel für Kapitel erzählt.', safe: 'SAFE PREVIEW: Entwurf, nicht Produktion – nichts wird ausgeführt.' },
+      steps: { intent: 'KAPITEL 01: Das Ziel als klare Headline.', signal: 'KAPITEL 02: Die Beobachtung als Beleg.', audit: 'KAPITEL 03: Das Ergebnis als Referenz.' }
+    },
+    uboot: {
+      index: 'STILWELT / 09 · KONTROLLRAUM', title: 'U-BOOT', accent: 'SONAR',
+      description: 'Phosphorgrün auf Schwarz, Messingrahmen und Nieten. Sonar-Sweep statt Neon, rotes Licht für die Schleichfahrt.',
+      mode: 'SILENT RUNNING', traits: ['PHOSPHOR CRT', 'BRASS & RIVETS', 'SONAR SWEEP'],
+      context: 'RIG FOR SILENT RUNNING.', signal: 'KONTAKT 014 / PASSIV', plan: 'SONAR BASELINE',
+      initial: 'Schleichfahrt: nur passives Sonar. Klicke Agenten oder eine Station an.',
+      agents: { ORBIT: 'ORBIT führt das Lagebild – der Plot am Kartentisch.', SENTINEL: 'SENTINEL horcht passiv in die Laborzone. Kein aktiver Ping.', KAI: 'KAI hält den virtuellen Decoy bereit – rein simuliert.' },
+      actions: { context: 'CONTEXT: Plan und Kontakt liegen gemeinsam auf dem Plot.', signal: 'SIGNAL TRACE: Peilung von der Quelle bis ins Logbuch.', safe: 'SAFE PREVIEW: Passiv horchen, nichts senden – keine Gegenmaßnahme.' },
+      steps: { intent: 'INTENT: Kurs und Grenzen der Übung festlegen.', signal: 'SIGNAL: Passiver Kontakt auf dem Sonar.', audit: 'AUDIT: Eintrag ins Logbuch mit Zeit und Wachhabendem.' }
     }
   };
 
@@ -282,6 +349,86 @@
     window.setTimeout(() => item.remove(), 4300);
   }
 
+  function normalizeTheme(name) {
+    return THEME_IDS.includes(name) ? name : 'nightwatch';
+  }
+
+  function getStoredTheme() {
+    try { return normalizeTheme(window.localStorage.getItem('cyberguardian.theme')); } catch (_) { return 'nightwatch'; }
+  }
+
+  const defaultCanvasPalette = {
+    particle: '112,243,242', shape: 'square', pulse: '255,76,58', accent: '112,243,242', hot: '255,76,58',
+    sky: ['#090b12', '#100f16', '#201318'], sun: '#e84635', halo: '255,77,49', halo2: '218,47,38', glow: '255,76,58',
+    stripe: 'rgba(43,10,14,.38)', city: '#080b10', stars: '112,243,242', starAlpha: 1
+  };
+
+  // Canvas colours follow the active theme; unset tokens keep the Nightwatch values.
+  function readCanvasPalette() {
+    const styles = window.getComputedStyle(document.documentElement);
+    const token = (name) => styles.getPropertyValue(name).trim();
+    const rgb = (name, fallback) => {
+      const value = token(name);
+      return value ? value.split(/[\s,/]+/).filter(Boolean).slice(0, 3).join(',') : fallback;
+    };
+    const base = defaultCanvasPalette;
+    const accent = rgb('--cyan-rgb', base.accent);
+    const sky = token('--drift-sky').split(',').map((part) => part.trim()).filter(Boolean);
+    const starAlpha = Number.parseFloat(token('--drift-stars'));
+    return {
+      particle: rgb('--particle-rgb', accent), shape: token('--particle-shape') || base.shape,
+      pulse: rgb('--red-rgb', base.pulse), accent, hot: rgb('--red-rgb', base.hot),
+      sky: sky.length === 3 ? sky : base.sky, sun: token('--drift-sun') || base.sun,
+      halo: rgb('--drift-halo', base.halo), halo2: rgb('--drift-halo', base.halo2), glow: rgb('--drift-halo', base.glow),
+      stripe: token('--drift-stripe') || base.stripe, city: token('--drift-city') || base.city,
+      stars: rgb('--drift-star-rgb', accent), starAlpha: Number.isFinite(starAlpha) ? starAlpha : base.starAlpha
+    };
+  }
+
+  /** Paints a theme without persisting it (used for live previews). */
+  function setDocumentTheme(name) {
+    const theme = normalizeTheme(name);
+    const root = document.documentElement;
+    if (theme === 'nightwatch') root.removeAttribute('data-theme'); else root.dataset.theme = theme;
+    $('meta[name="theme-color"]')?.setAttribute('content', themeMeta[theme].color);
+    canvasPalette = readCanvasPalette();
+    if (driftRenderer && currentView === 'drift' && !$('#appView').classList.contains('is-hidden') && !motionAllowed()) driftRenderer.still();
+  }
+
+  function renderThemeState() {
+    $$('[data-theme-select]').forEach((select) => { select.value = appliedTheme; });
+    const status = $('#themeStatus');
+    if (status) status.textContent = themeMeta[appliedTheme].label;
+    const reset = $('#themeReset');
+    if (reset) reset.disabled = appliedTheme === 'nightwatch';
+    $$('.world-card').forEach((card) => {
+      const active = card.dataset.theme === appliedTheme;
+      card.classList.toggle('is-active', active);
+      const apply = $('[data-theme-apply]', card);
+      if (apply) {
+        apply.textContent = active ? 'AKTIV ✓' : 'ANWENDEN';
+        apply.setAttribute('aria-pressed', active ? 'true' : 'false');
+      }
+    });
+  }
+
+  /** Makes a theme the cockpit's look (persisted, reversible at any time). */
+  function applyTheme(name, { persist = true, announce = false } = {}) {
+    appliedTheme = normalizeTheme(name);
+    setDocumentTheme(appliedTheme);
+    if (persist) {
+      try {
+        if (appliedTheme === 'nightwatch') window.localStorage.removeItem('cyberguardian.theme');
+        else window.localStorage.setItem('cyberguardian.theme', appliedTheme);
+      } catch (_) { /* optional preference */ }
+    }
+    renderThemeState();
+    if (announce) {
+      const message = appliedTheme === 'nightwatch' ? 'Standard-Look NIGHTWATCH ist wieder aktiv.' : `Stilwelt ${themeMeta[appliedTheme].label} ist aktiv – zurück jederzeit über STIL.`;
+      toast(message, 'success');
+    }
+  }
+
   function getStoredPrototype() {
     try {
       const value = window.localStorage.getItem('cyberguardian.prototypeDirection');
@@ -350,11 +497,21 @@
     }
   }
 
+  function previewConfig(name) {
+    return prototypeVariants[name] || themeWorlds[name] || prototypeVariants.nightwatch;
+  }
+
+  function prototypeSelectLabel(name) {
+    if (themeWorlds[name]) return appliedTheme === name ? 'THEME AKTIV ✓' : 'DIESES THEME NUTZEN ↗';
+    return selectedPrototype === name ? 'DIRECTION LOCKED ✓' : 'USE THIS DIRECTION ↗';
+  }
+
   function renderPrototypePreview(name) {
-    const config = prototypeVariants[name] || prototypeVariants.nightwatch;
+    const config = previewConfig(name);
     activePrototype = name;
     const stage = $('#prototypeStage');
-    stage.dataset.variant = name;
+    // Style worlds share the base stage layout; the theme itself restyles it.
+    stage.dataset.variant = themeWorlds[name] ? 'world' : name;
     $('#prototypePreviewKicker').textContent = config.index;
     const title = $('#prototypePreviewTitle');
     title.childNodes[0].textContent = `${config.title} `;
@@ -367,7 +524,7 @@
     $('#prototypeTraitOne').textContent = config.traits[0];
     $('#prototypeTraitTwo').textContent = config.traits[1];
     $('#prototypeTraitThree').textContent = config.traits[2];
-    $('#prototypeSelectButton').textContent = selectedPrototype === name ? 'DIRECTION LOCKED ✓' : 'USE THIS DIRECTION ↗';
+    $('#prototypeSelectButton').textContent = prototypeSelectLabel(name);
     resetPrototypeControls();
     renderPreviewPackets();
     const now = new Date();
@@ -376,8 +533,10 @@
   }
 
   function openPrototypePreview(name) {
-    if (!prototypeVariants[name]) return;
+    if (!prototypeVariants[name] && !themeWorlds[name]) return;
     prototypeReturnFocus = document.activeElement;
+    // A style world previews live on the whole page; the four studies are drawn in the Nightwatch palette.
+    setDocumentTheme(themeWorlds[name] ? name : 'nightwatch');
     renderPrototypePreview(name);
     $('#prototypeBackdrop').classList.remove('is-hidden');
     document.body.classList.add('prototype-open');
@@ -391,6 +550,7 @@
   }
 
   function closePrototypePreview() {
+    setDocumentTheme(appliedTheme);
     $('#prototypeBackdrop').classList.add('is-hidden');
     document.body.classList.remove('prototype-open');
     if (prototypeReturnFocus && document.contains(prototypeReturnFocus)) prototypeReturnFocus.focus({ preventScroll: true });
@@ -405,16 +565,23 @@
     announcePrototype(`${prototypeVariants[activePrototype].title} ${prototypeVariants[activePrototype].accent} ist als bevorzugte Richtung markiert. Produktionsdesign bleibt unverändert.`);
   }
 
+  function handlePrototypeSelect() {
+    if (!themeWorlds[activePrototype]) { lockPrototypeDirection(); return; }
+    applyTheme(activePrototype, { announce: true });
+    $('#prototypeSelectButton').textContent = prototypeSelectLabel(activePrototype);
+    announcePrototype(`${themeMeta[activePrototype].label} ist jetzt der Look für Startseite und Cockpit. Zurück jederzeit über STIL oder „Standard“.`);
+  }
+
   function clearPrototypeDirection() {
     selectedPrototype = null;
     try { window.localStorage.removeItem('cyberguardian.prototypeDirection'); } catch (_) { /* optional preference */ }
     renderPrototypeSelection();
-    if ($('#prototypeSelectButton')) $('#prototypeSelectButton').textContent = 'USE THIS DIRECTION ↗';
+    if ($('#prototypeSelectButton')) $('#prototypeSelectButton').textContent = prototypeSelectLabel(activePrototype);
     announcePrototype('Auswahl gelöscht. Keine Designrichtung ist festgelegt.');
   }
 
   function handlePrototypeAgent(agent) {
-    const config = prototypeVariants[activePrototype];
+    const config = previewConfig(activePrototype);
     $$('.preview-agent').forEach((button) => button.classList.toggle('preview-agent--active', button.dataset.previewAgent === agent));
     $('#previewContextTitle').textContent = `${agent} / SHARED CONTEXT`;
     $('#previewContextSignal').textContent = `HANDOFF / ${agent}`;
@@ -422,13 +589,13 @@
   }
 
   function handlePrototypeAction(action) {
-    const config = prototypeVariants[activePrototype];
+    const config = previewConfig(activePrototype);
     $$('.preview-action').forEach((button) => button.classList.toggle('preview-action--active', button.dataset.previewAction === action));
     announcePrototype(config.actions[action] || 'Interaktion für diese Richtung ist bereit.');
   }
 
   function handlePrototypeStep(step) {
-    const config = prototypeVariants[activePrototype];
+    const config = previewConfig(activePrototype);
     $$('.preview-step').forEach((button) => button.classList.toggle('preview-step--active', button.dataset.previewStep === step));
     announcePrototype(config.steps[step] || 'Workflow-Schritt ausgewählt.');
   }
@@ -499,10 +666,10 @@
   function renderMetrics() {
     const stats = state.stats || {};
     const metrics = [
-      { label: 'AGENTS ONLINE', value: `${stats.online_agents || 0}`, unit: `/ ${stats.total_agents || 0}`, icon: '✣', color: '#70f3f2', rail: Math.round(((stats.online_agents || 0) / Math.max(stats.total_agents || 1, 1)) * 100) },
-      { label: 'ACTIVE PLANS', value: `${stats.active_plans || 0}`, unit: 'IN MOTION', icon: '◈', color: '#ff9b52', rail: Math.min(100, ((stats.active_plans || 0) / Math.max(state.plans.length, 1)) * 100) },
-      { label: 'OPEN INCIDENTS', value: `${stats.open_incidents || 0}`, unit: 'TO TRIAGE', icon: '◆', color: '#ff4c3a', rail: Math.min(100, ((stats.open_incidents || 0) / Math.max(state.incidents.length || 1, 1)) * 100) },
-      { label: 'SIGNALS CAPTURED', value: `${signalTotal(stats)}`, unit: 'SYNTHETIC', icon: '⌁', color: '#f168d4', rail: Math.min(100, (signalTotal(stats) / 25) * 100) }
+      { label: 'AGENTS ONLINE', value: `${stats.online_agents || 0}`, unit: `/ ${stats.total_agents || 0}`, icon: '✣', color: 'var(--cyan)', rail: Math.round(((stats.online_agents || 0) / Math.max(stats.total_agents || 1, 1)) * 100) },
+      { label: 'ACTIVE PLANS', value: `${stats.active_plans || 0}`, unit: 'IN MOTION', icon: '◈', color: 'var(--orange)', rail: Math.min(100, ((stats.active_plans || 0) / Math.max(state.plans.length, 1)) * 100) },
+      { label: 'OPEN INCIDENTS', value: `${stats.open_incidents || 0}`, unit: 'TO TRIAGE', icon: '◆', color: 'var(--red)', rail: Math.min(100, ((stats.open_incidents || 0) / Math.max(state.incidents.length || 1, 1)) * 100) },
+      { label: 'SIGNALS CAPTURED', value: `${signalTotal(stats)}`, unit: 'SYNTHETIC', icon: '⌁', color: 'var(--magenta)', rail: Math.min(100, (signalTotal(stats) / 25) * 100) }
     ];
     $('#commandMetrics').innerHTML = metrics.map((metric) => `
       <article class="metric-card" style="--metric-color:${metric.color}">
@@ -1102,16 +1269,40 @@
     };
     const draw = (time) => {
       context.clearRect(0, 0, width, height);
+      const palette = canvasPalette || defaultCanvasPalette;
+      if (palette.shape === 'none') return;
       const pulseX = width * (.2 + ((Math.sin(time / 9000) + 1) * .28));
       particles.forEach((particle) => {
-        particle.y -= particle.speed;
+        if (palette.shape === 'streak') {
+          // Neo-Tokyo light trails: fast horizontal streaks.
+          particle.x -= particle.speed * 7;
+          if (particle.x < -60) { particle.x = width + 60; particle.y = Math.random() * height; }
+          context.fillStyle = `rgba(${palette.particle},${particle.alpha * .8})`;
+          context.fillRect(particle.x, particle.y, 18 + particle.size * 22, Math.max(1, particle.size * .7));
+          return;
+        }
+        particle.y -= palette.shape === 'star' ? particle.speed * .25 : particle.speed;
         if (particle.y < -5) { particle.y = height + 5; particle.x = Math.random() * width; }
-        context.fillStyle = `rgba(112,243,242,${particle.alpha})`;
-        context.fillRect(particle.x, particle.y, particle.size, particle.size);
+        if (palette.shape === 'bubble') {
+          // Submarine: rising bubbles with a gentle wobble.
+          context.strokeStyle = `rgba(${palette.particle},${particle.alpha})`;
+          context.lineWidth = 1;
+          context.beginPath();
+          context.arc(particle.x + Math.sin(time / 900 + particle.size * 9) * 3, particle.y, 1.5 + particle.size * 1.6, 0, Math.PI * 2);
+          context.stroke();
+        } else if (palette.shape === 'star') {
+          context.fillStyle = `rgba(${palette.particle},${particle.alpha * (.55 + .45 * Math.sin(time / 700 + particle.x))})`;
+          context.beginPath();
+          context.arc(particle.x, particle.y, particle.size * .9, 0, Math.PI * 2);
+          context.fill();
+        } else {
+          context.fillStyle = `rgba(${palette.particle},${particle.alpha})`;
+          context.fillRect(particle.x, particle.y, particle.size, particle.size);
+        }
       });
       context.beginPath();
       context.moveTo(pulseX, height * .12); context.lineTo(pulseX + 210, height * .88);
-      context.strokeStyle = 'rgba(255,76,58,.05)'; context.lineWidth = 1; context.stroke();
+      context.strokeStyle = `rgba(${palette.pulse},.05)`; context.lineWidth = 1; context.stroke();
     };
     const loop = (time) => { draw(time); frame = window.requestAnimationFrame(loop); };
     window.addEventListener('resize', resize, { passive: true });
@@ -1137,21 +1328,22 @@
     const skyline = Array.from({ length: 52 }, (_, index) => ({ x: index / 52, w: .008 + Math.random() * .026, h: .05 + Math.random() * .23, hue: Math.random() > .72 ? 'red' : 'cyan' }));
     const stars = Array.from({ length: 50 }, () => ({ x: Math.random(), y: .08 + Math.random() * .53, a: .2 + Math.random() * .55, r: .3 + Math.random() * 1.1 }));
     const draw = (time) => {
+      const palette = canvasPalette || defaultCanvasPalette;
       context.clearRect(0, 0, width, height);
       const gradient = context.createLinearGradient(0, 0, 0, height);
-      gradient.addColorStop(0, '#090b12'); gradient.addColorStop(.7, '#100f16'); gradient.addColorStop(1, '#201318');
+      gradient.addColorStop(0, palette.sky[0]); gradient.addColorStop(.7, palette.sky[1]); gradient.addColorStop(1, palette.sky[2]);
       context.fillStyle = gradient; context.fillRect(0, 0, width, height);
       const sunX = width * .68; const sunY = height * .39; const sunR = Math.min(width, height) * .18;
       const halo = context.createRadialGradient(sunX, sunY, sunR * .5, sunX, sunY, sunR * 1.8);
-      halo.addColorStop(0, 'rgba(255,77,49,.45)'); halo.addColorStop(.42, 'rgba(218,47,38,.2)'); halo.addColorStop(1, 'rgba(218,47,38,0)');
+      halo.addColorStop(0, `rgba(${palette.halo},.45)`); halo.addColorStop(.42, `rgba(${palette.halo2},.2)`); halo.addColorStop(1, `rgba(${palette.halo2},0)`);
       context.fillStyle = halo; context.fillRect(0, 0, width, height);
-      context.fillStyle = '#e84635'; context.shadowColor = 'rgba(255,76,58,.65)'; context.shadowBlur = 22; context.beginPath(); context.arc(sunX, sunY, sunR, 0, Math.PI * 2); context.fill(); context.shadowBlur = 0;
-      context.fillStyle = 'rgba(43,10,14,.38)'; for (let i = 0; i < 7; i += 1) context.fillRect(sunX - sunR, sunY - sunR + i * sunR * .28, sunR * 2, 4);
-      stars.forEach((star) => { context.fillStyle = `rgba(112,243,242,${star.a * (.7 + .3 * Math.sin(time / 800 + star.x * 8))})`; context.beginPath(); context.arc(star.x * width, star.y * height, star.r, 0, Math.PI * 2); context.fill(); });
-      context.fillStyle = '#080b10'; context.beginPath(); context.moveTo(0, height * .69); skyline.forEach((building) => { const x = building.x * width; const h = building.h * height; context.lineTo(x, height * .69); context.lineTo(x, height * .69 - h); context.lineTo(x + building.w * width, height * .69 - h); context.lineTo(x + building.w * width, height * .69); }); context.lineTo(width, height); context.lineTo(0, height); context.closePath(); context.fill();
-      skyline.forEach((building) => { const x = building.x * width; const top = height * (.69 - building.h); const windows = Math.max(1, Math.floor(building.h * 26)); context.fillStyle = building.hue === 'red' ? 'rgba(255,76,58,.42)' : 'rgba(112,243,242,.28)'; for (let i = 0; i < windows; i += 1) { const y = top + 6 + i * 9; if (y < height * .68) context.fillRect(x + 3, y, Math.max(1, building.w * width * .18), 1); } });
-      context.strokeStyle = 'rgba(255,76,58,.27)'; context.lineWidth = 1; context.beginPath(); context.moveTo(0, height * .69); context.lineTo(width, height * .69); context.stroke();
-      const sweepX = ((time / 35) % (width + 200)) - 100; context.strokeStyle = 'rgba(112,243,242,.13)'; context.beginPath(); context.moveTo(sweepX, 0); context.lineTo(sweepX - 90, height); context.stroke();
+      context.fillStyle = palette.sun; context.shadowColor = `rgba(${palette.glow},.65)`; context.shadowBlur = 22; context.beginPath(); context.arc(sunX, sunY, sunR, 0, Math.PI * 2); context.fill(); context.shadowBlur = 0;
+      context.fillStyle = palette.stripe; for (let i = 0; i < 7; i += 1) context.fillRect(sunX - sunR, sunY - sunR + i * sunR * .28, sunR * 2, 4);
+      if (palette.starAlpha > 0) stars.forEach((star) => { context.fillStyle = `rgba(${palette.stars},${palette.starAlpha * star.a * (.7 + .3 * Math.sin(time / 800 + star.x * 8))})`; context.beginPath(); context.arc(star.x * width, star.y * height, star.r, 0, Math.PI * 2); context.fill(); });
+      context.fillStyle = palette.city; context.beginPath(); context.moveTo(0, height * .69); skyline.forEach((building) => { const x = building.x * width; const h = building.h * height; context.lineTo(x, height * .69); context.lineTo(x, height * .69 - h); context.lineTo(x + building.w * width, height * .69 - h); context.lineTo(x + building.w * width, height * .69); }); context.lineTo(width, height); context.lineTo(0, height); context.closePath(); context.fill();
+      skyline.forEach((building) => { const x = building.x * width; const top = height * (.69 - building.h); const windows = Math.max(1, Math.floor(building.h * 26)); context.fillStyle = building.hue === 'red' ? `rgba(${palette.hot},.42)` : `rgba(${palette.accent},.28)`; for (let i = 0; i < windows; i += 1) { const y = top + 6 + i * 9; if (y < height * .68) context.fillRect(x + 3, y, Math.max(1, building.w * width * .18), 1); } });
+      context.strokeStyle = `rgba(${palette.hot},.27)`; context.lineWidth = 1; context.beginPath(); context.moveTo(0, height * .69); context.lineTo(width, height * .69); context.stroke();
+      const sweepX = ((time / 35) % (width + 200)) - 100; context.strokeStyle = `rgba(${palette.accent},.13)`; context.beginPath(); context.moveTo(sweepX, 0); context.lineTo(sweepX - 90, height); context.stroke();
     };
     const loop = (time) => { draw(time); frame = window.requestAnimationFrame(loop); };
     window.addEventListener('resize', () => {
@@ -1202,7 +1394,15 @@
     $$('[data-enter]').forEach((element) => element.addEventListener('click', (event) => { event.preventDefault(); enterCockpit(element.dataset.enter); }));
     $$('[data-design-variant]').forEach((button) => button.addEventListener('click', () => openPrototypePreview(button.dataset.designVariant)));
     $('#clearPrototypeSelection')?.addEventListener('click', clearPrototypeDirection);
-    $('#prototypeSelectButton')?.addEventListener('click', lockPrototypeDirection);
+    $('#prototypeSelectButton')?.addEventListener('click', handlePrototypeSelect);
+    $$('[data-theme-preview]').forEach((button) => button.addEventListener('click', () => openPrototypePreview(button.dataset.themePreview)));
+    $$('[data-theme-apply]').forEach((button) => button.addEventListener('click', () => applyTheme(button.dataset.themeApply, { announce: true })));
+    $$('[data-theme-select]').forEach((select) => select.addEventListener('change', () => applyTheme(select.value, { announce: true })));
+    $('#themeReset')?.addEventListener('click', () => applyTheme('nightwatch', { announce: true }));
+    // Keep several open cockpit tabs on the same style world.
+    window.addEventListener('storage', (event) => {
+      if (event.key === 'cyberguardian.theme' && $('#prototypeBackdrop').classList.contains('is-hidden')) applyTheme(getStoredTheme(), { persist: false });
+    });
     $('#previewCaptureButton')?.addEventListener('click', capturePreviewMetadata);
     $('[data-close-prototype]')?.addEventListener('click', closePrototypePreview);
     $('#prototypeBackdrop')?.addEventListener('click', (event) => { if (event.target === $('#prototypeBackdrop')) closePrototypePreview(); });
@@ -1276,6 +1476,7 @@
   }
 
   async function boot() {
+    applyTheme(getStoredTheme(), { persist: false });
     selectedPrototype = getStoredPrototype();
     renderPrototypeSelection();
     bindEvents();
