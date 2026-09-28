@@ -1,0 +1,17 @@
+{
+  "name": "cyberguardian-e2e",
+  "private": true,
+  "type": "module",
+  "description": "Browser end-to-end checks for the CyberGuardian cockpit: style worlds, flows, responsive layout and accessibility.",
+  "license": "UNLICENSED",
+  "scripts": {
+    "test": "node run.mjs"
+  },
+  "engines": {
+    "node": ">=22.12"
+  },
+  "devDependencies": {
+    "axe-core": "4.13.0",
+    "puppeteer-core": "25.12.0"
+  }
+}

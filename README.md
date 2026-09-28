@@ -74,7 +74,7 @@ Unter den vier Studien liegen fünf **Stilwelten** – vollständige Themes für
 
 **VORSCHAU** färbt die ganze Seite live zur Probe um (beim Schließen kehrt der vorherige Look zurück), **ANWENDEN** bzw. **DIESES THEME NUTZEN** speichert die Wahl in `localStorage` (`cyberguardian.theme`). Umschalten geht jederzeit über **STIL** im Startseiten-Header und in der Cockpit-Topbar; **STANDARD ↺** kehrt zu Nightwatch zurück. `web/theme-boot.js` setzt das gespeicherte Theme schon vor dem ersten Rendern, damit nichts aufblitzt.
 
-Technisch schreibt `web/styles.css` jede Farbe als `rgb(var(--<familie>-rgb, <originalwert>) / <alpha>)`. Im Standard-Look sind die Familien-Tokens nicht gesetzt, er bleibt pixelgenau erhalten; `web/themes.css` definiert pro Stilwelt die 13 Farbfamilien plus Form, Typografie und Dekor. `tests/test_themes.py` prüft, dass jede Stilwelt alle Familien definiert und Theme-Liste, Boot-Skript, Auswahlfelder und Karten übereinstimmen.
+Technisch schreibt `web/styles.css` jede Farbe als `rgb(var(--<familie>-rgb, <originalwert>) / <alpha>)`. Im Standard-Look sind die Familien-Tokens nicht gesetzt, er bleibt pixelgenau erhalten; `web/themes.css` definiert pro Stilwelt die 13 Farbfamilien plus Form, Typografie und Dekor. `tests/test_themes.py` prüft, dass jede Stilwelt alle Familien definiert, ihre Text-Tokens WCAG AA (4,5:1) erreichen und Theme-Liste, Boot-Skript, Auswahlfelder und Karten übereinstimmen.
 
 Die Preview enthält außerdem eine **Wireshark Bridge**: Über den bestehenden, begrenzten Packet Observatory können Header-Metadaten aus `tshark` oder `tcpdump` geladen werden. Angezeigt werden nur Zeit, Quelle, Ziel, Ports und Protokoll — niemals Payload-Inhalte. Fehlt das lokale Tool, bleibt eine eindeutig markierte synthetische Demo sichtbar.
 
@@ -192,7 +192,27 @@ python3 -m unittest discover -s tests -v
 node --check web/app.js web/theme-boot.js   # optional: Syntaxcheck des Frontends
 ```
 
-Abgedeckt sind u. a. die HTTP-API gegen einen echten Server auf einem freien Port (Routing, Statuscodes, CSRF-, Host- und Pfad-Schutz, Body-Limits, HEAD, gebündelte Fonts), der Control Plane (Persistenz, Backups beschädigter Dateien, eindeutige IDs, Dateirechte, Honeypot-Regeln), der tshark/tcpdump-Parser inkl. Timeout-Verhalten alle 15 allowlisteten Tool-Aktionen sowie die Konsistenz der Stilwelten (Farbfamilien, Theme-IDs, gebündelte und lizenzierte Schriften). Die GitHub Action `.github/workflows/tests.yml` führt die Suite bei jedem Push und Pull Request auf mehreren Python-Versionen aus.
+Abgedeckt sind u. a. die HTTP-API gegen einen echten Server auf einem freien Port (Routing, Statuscodes, CSRF-, Host- und Pfad-Schutz, Body-Limits, HEAD, gebündelte Fonts), der Control Plane (Persistenz, Backups beschädigter Dateien, eindeutige IDs, Dateirechte, Honeypot-Regeln), der tshark/tcpdump-Parser inkl. Timeout-Verhalten, alle 15 allowlisteten Tool-Aktionen sowie die Konsistenz der Stilwelten (Farbfamilien, Theme-IDs, gebündelte und lizenzierte Schriften, WCAG-AA-Kontrast der Text-Tokens auf Seite und Panels). Die GitHub Action `.github/workflows/tests.yml` führt die Suite bei jedem Push und Pull Request auf mehreren Python-Versionen aus.
+
+### Browser-Checks (E2E)
+
+`tests/e2e/` fährt das Cockpit in einem echten Chrome durch. Es wird kein Browser heruntergeladen – die Suite nutzt ein installiertes Chrome/Chromium (`CHROME_PATH`, sonst `CHROME_BIN` oder die üblichen Installationspfade) und startet `server.py` selbst auf einem freien Port mit einer temporären Zustandsdatei:
+
+```bash
+cd tests/e2e
+npm ci
+npm test                              # alle 56 Checks
+npm test -- --grep "a11y: agentur"     # Auswahl per regulärem Ausdruck
+CHROME_PATH=/pfad/zu/chrome npm test   # bestimmten Browser verwenden
+```
+
+- **Abläufe:** Rail-Navigation, Dialoge (Fokus, Tab-Falle, Escape, Fokus-Rückgabe), Plan anlegen → API → Board, Honeypot anlegen → aktivieren → synthetisches Signal, Tool-Atlas-Suche und auditierte Aktion, Motion-Schalter, Fallback auf `LOCAL DEMO` ohne Control Plane.
+- **Stilwelten:** Theme steht vor dem ersten Paint, unbekannte Werte fallen auf Nightwatch zurück, `STANDARD ↺`, `VORSCHAU` mit Escape und Fokus-Rückgabe, Synchronisation zwischen Tabs, Landing- und Topbar-Schalter synchron, eigene Signal-Drift-Szene je Welt.
+- **Responsive:** 390 px und 820 px ohne horizontales Überlaufen, abgeschnittene Inhalte oder kollidierende Header-Elemente – in jeder Welt und jeder Ansicht.
+- **Barrierefreiheit:** axe-core (WCAG 2.0–2.2 A/AA) für Startseite, alle sieben Ansichten, Dialoge und Previews. Dazu kommt eine **Kontrastmessung auf echten Pixeln**: Text wird ausgeblendet, der Hintergrund aus dem Screenshot gelesen – so sind auch Verläufe, Glows und Ebenen abgedeckt, die axe überspringen muss. Außerdem wird geprüft, dass der Tastaturfokus überall sichtbar ist.
+- Jede Seite läuft unter der echten CSP; Konsolenfehler, fehlgeschlagene Requests und CSP-Verstöße lassen den jeweiligen Test scheitern.
+
+In CI läuft die Suite im Job `e2e` mit dem vorinstallierten Chrome des Runners; schlägt ein Test fehl, liegen Screenshots als Artefakt bereit.
 
 ## Projektstruktur
 
@@ -214,7 +234,8 @@ CyberGuardian/
 ├── main.py                 # CustomTkinter-Oberfläche
 ├── main_anime.py           # Dear-PyGui-Oberfläche
 ├── launcher.py             # Desktop-Abhängigkeitscheck und Browser-Shortcut
-├── tests/                  # API-, Control-Plane-, Defense-Ops- und Katalogtests
+├── tests/                  # API-, Control-Plane-, Defense-Ops-, Katalog- und Theme-Tests
+│   └── e2e/                # Browser-Checks (Puppeteer + axe-core): Abläufe, Stilwelten, Responsive, A11y
 └── utils/                  # Logging, Backups und Konfiguration
 ```
 

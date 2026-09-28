@@ -59,3 +59,43 @@ jobs:
 
       - name: Check installer syntax
         run: bash -n install.sh
+
+  e2e:
+    name: Browser checks (Chrome)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: tests/e2e/package-lock.json
+
+      - name: Install browser test dependencies
+        working-directory: tests/e2e
+        run: npm ci --no-audit --no-fund
+
+      # Uses the Google Chrome preinstalled on the runner (CHROME_BIN); no browser download.
+      - name: Run browser checks (flows, style worlds, responsive, axe + pixel contrast)
+        working-directory: tests/e2e
+        run: npm test
+
+      - name: Upload failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: e2e-failure-screenshots
+          path: tests/e2e/artifacts/
+          if-no-files-found: ignore
+          retention-days: 7
