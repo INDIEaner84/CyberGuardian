@@ -14,7 +14,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { run } from './lib/harness.mjs';
+import { describeError, run } from './lib/harness.mjs';
 import { createPageFactory, launchBrowser } from './lib/browser.mjs';
 import { startServer } from './lib/server.mjs';
 
@@ -58,6 +58,7 @@ try {
     },
   });
   exitCode = failed.length ? 1 : 0;
+  if (failed.length && process.env.GITHUB_ACTIONS === 'true') reportToGitHub(failed);
   if (failed.length && server) {
     const tail = server.logs().split('\n').slice(-25).join('\n');
     if (tail.trim()) console.log(`\nserver.py log (tail):\n${tail}`);
@@ -69,3 +70,16 @@ try {
   await server?.stop();
 }
 process.exit(exitCode);
+
+/** Failures as check annotations (first 10 show on the run page) and in the job summary. */
+function reportToGitHub(failed) {
+  const data = (text) => text.replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+  const property = (text) => data(text).replace(/:/g, '%3A').replace(/,/g, '%2C');
+  for (const result of failed) {
+    console.log(`::error title=${property(result.name)}::${data(describeError(result.error).slice(0, 4000))}`);
+  }
+  if (process.env.GITHUB_STEP_SUMMARY) {
+    const rows = failed.map((result) => `### ✗ ${result.name}\n\n\`\`\`\n${describeError(result.error).slice(0, 6000)}\n\`\`\`\n`);
+    fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `## Browser checks: ${failed.length} failed\n\n${rows.join('\n')}`);
+  }
+}

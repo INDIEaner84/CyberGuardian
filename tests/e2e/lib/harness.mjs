@@ -16,7 +16,7 @@ function withTimeout(promise, ms, name) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
-function describeError(error) {
+export function describeError(error) {
   if (!error) return 'unknown error';
   if (error.name === 'AssertionError' && error.generatedMessage === false) return error.message;
   if (error.name === 'AssertionError') {
