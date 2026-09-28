@@ -57,18 +57,18 @@
         </div>
       </div>
 
-      <div class="hero-visual" aria-label="Animierte CyberGuardian Signalvisualisierung">
-        <div class="sun-halo"></div>
-        <div class="sun-core"><span>守</span></div>
-        <div class="orbit orbit--one"><i></i></div>
-        <div class="orbit orbit--two"><i></i></div>
-        <div class="orbit orbit--three"><i></i></div>
+      <div class="hero-visual" role="group" aria-label="Animierte CyberGuardian Signalvisualisierung">
+        <div class="sun-halo" aria-hidden="true"></div>
+        <div class="sun-core" aria-hidden="true"><span>守</span></div>
+        <div class="orbit orbit--one" aria-hidden="true"><i></i></div>
+        <div class="orbit orbit--two" aria-hidden="true"><i></i></div>
+        <div class="orbit orbit--three" aria-hidden="true"><i></i></div>
         <div class="visual-readout visual-readout--top"><span>SYNC</span><strong id="heroSyncReadout">LIVE</strong></div>
         <div class="visual-readout visual-readout--bottom"><span>AGENT MESH</span><strong id="heroAgentReadout">04 ONLINE</strong></div>
         <div class="visual-data-stack" aria-hidden="true"><div><span>THREAT TEMP</span><i><b style="width: 31%"></b></i><strong>OBSERVE</strong></div><div><span>INTENT FLOW</span><i><b style="width: 84%"></b></i><strong>SYNCED</strong></div><div><span>EVIDENCE</span><i><b style="width: 67%"></b></i><strong>LOCAL</strong></div></div>
         <div class="visual-reticle" aria-hidden="true"><span></span><i></i><b>NODE 7F-A</b></div>
-        <div class="visual-bracket bracket--left">[</div>
-        <div class="visual-bracket bracket--right">]</div>
+        <div class="visual-bracket bracket--left" aria-hidden="true">[</div>
+        <div class="visual-bracket bracket--right" aria-hidden="true">]</div>
       </div>
     </section>
 
@@ -80,7 +80,7 @@
         <div class="mission-overview-actions"><button class="button button--ghost" data-enter="about">PROJEKT BRIEF ÖFFNEN ↗</button><span class="mission-route"><i></i> INTENT → SIGNAL → EVIDENCE</span></div>
       </div>
       <div class="mission-overview-rail">
-        <div class="rail-orbit"><span></span><b>SOT</b></div>
+        <div class="rail-orbit" aria-hidden="true"><span></span><b>SOT</b></div>
         <div class="mission-stat"><strong id="landingAgentCount">04</strong><span>AGENTS IN MESH</span></div>
         <div class="mission-stat"><strong id="landingPlanCount">03</strong><span>PLANS IN CONTEXT</span></div>
         <div class="mission-stat"><strong id="landingSignalCount">03</strong><span>DEFENSIVE SIGNALS</span></div>
@@ -328,7 +328,7 @@
             </section>
             <section class="panel activity-panel">
               <div class="panel-heading"><div><p class="panel-kicker">AUDIT TRAIL / LOCAL</p><h2>ACTIVITY RIVER</h2></div><span class="panel-code">LOCAL // JSON</span></div>
-              <div id="activityList" class="activity-list"></div>
+              <div id="activityList" class="activity-list" tabindex="0" role="region" aria-label="Activity River"></div>
             </section>
           </div>
         </section>
@@ -341,7 +341,7 @@
           <div class="explain-strip explain-strip--mesh"><span class="explain-strip-icon">✣</span><div><strong>SO FUNKTIONIERT DER MESH</strong><p>Ein Agent legt ein Vorhaben an → der Control Plane speichert es → alle Nodes lesen Owner, Status und Kontext aus derselben Quelle. Klicke einen Plan an, um ihn im Workflow weiterzuführen.</p></div><span class="explain-strip-rule">ONE WRITE / MANY READS</span></div>
           <div class="mesh-layout">
             <section class="panel mesh-map-panel"><div class="panel-heading"><div><p class="panel-kicker">SHARED INTENT GRAPH / LIVE</p><h2>CONSTELLATION</h2></div><span id="meshNodeTag" class="tag tag--green">— NODES ONLINE</span></div><div id="meshMap" class="mesh-map"></div><div class="map-legend"><span><i class="legend-dot legend-dot--cyan"></i>ONLINE</span><span><i class="legend-dot legend-dot--orange"></i>ACTIVE FOCUS</span><span><i class="legend-dot legend-dot--dim"></i>STANDBY</span><span><i class="legend-line"></i>SHARED CONTEXT</span></div></section>
-            <section class="panel message-panel"><div class="panel-heading"><div><p class="panel-kicker">AGENT-TO-AGENT</p><h2>HANDOFFS</h2></div><span class="panel-code" id="meshMessageCount">0</span></div><div id="messageList" class="message-list"></div></section>
+            <section class="panel message-panel"><div class="panel-heading"><div><p class="panel-kicker">AGENT-TO-AGENT</p><h2>HANDOFFS</h2></div><span class="panel-code" id="meshMessageCount">0</span></div><div id="messageList" class="message-list" tabindex="0" role="region" aria-label="Handoffs"></div></section>
           </div>
           <section class="panel board-panel"><div class="panel-heading"><div><p class="panel-kicker">ONE QUEUE / NO LOST INTENT</p><h2>SHARED PLAN BOARD</h2></div><div class="board-legend"><span class="tag tag--high">HIGH</span><span class="tag">NORMAL</span><span class="tag tag--done">DONE</span></div></div><div id="meshPlanBoard" class="plan-board"></div></section>
         </section>
@@ -354,7 +354,7 @@
           <div class="lab-callout"><span class="callout-icon">✦</span><div><strong>DEFENSIVE BOUNDARY</strong><p>Ein Eintrag ist ein virtuelles Testobjekt in der lokalen Control Plane. CyberGuardian öffnet hier keinen Port, antwortet keinem Angreifer und führt keine Payload aus.</p></div><span class="callout-code">RULE / 001</span></div>
           <div class="lab-workflow" aria-label="Honeypot Lab Ablauf"><div class="lab-workflow-step"><span>01</span><strong>CREATE</strong><small>Decoy-Profil anlegen</small></div><i>›</i><div class="lab-workflow-step"><span>02</span><strong>ACTIVATE</strong><small>virtuellen Node beobachten</small></div><i>›</i><div class="lab-workflow-step"><span>03</span><strong>SIMULATE</strong><small>Testsignal einspeisen</small></div><i>›</i><div class="lab-workflow-step"><span>04</span><strong>ACK</strong><small>Incident quittieren</small></div></div>
           <div id="labPotGrid" class="honeypot-grid"></div>
-          <section class="panel signal-log-panel"><div class="panel-heading"><div><p class="panel-kicker">CAPTURED TELEMETRY / SYNTHETIC</p><h2>SIGNAL LOG</h2></div><div class="log-actions"><span class="panel-code" id="signalLogCount">0 EVENTS</span><button class="button button--tiny button--ghost" id="simulateRandomSignal">＋ TESTSIGNAL EINSPEISEN</button></div></div><div id="signalTable" class="signal-table"></div></section>
+          <section class="panel signal-log-panel"><div class="panel-heading"><div><p class="panel-kicker">CAPTURED TELEMETRY / SYNTHETIC</p><h2>SIGNAL LOG</h2></div><div class="log-actions"><span class="panel-code" id="signalLogCount">0 EVENTS</span><button class="button button--tiny button--ghost" id="simulateRandomSignal">＋ TESTSIGNAL EINSPEISEN</button></div></div><div id="signalTable" class="signal-table" tabindex="0" role="region" aria-label="Signal Log"></div></section>
         </section>
 
         <section class="view-panel" data-view-panel="ops">
@@ -417,10 +417,10 @@
           <div class="preview-canvas">
             <div class="preview-canvas-heading"><div><span>SHARED CONTEXT / NODE 7F-A</span><strong id="previewContextTitle">ONE TRUTH. MANY GUARDIANS.</strong></div><em id="previewContextSignal">SIGNAL 014 / OBSERVE</em></div>
             <div class="preview-surface">
-              <div class="preview-grid-glow"></div>
-              <div class="preview-sun"></div>
-              <div class="preview-scan-line"></div>
-              <div class="preview-orbit"><i class="preview-orbit-node preview-orbit-node--one">O</i><i class="preview-orbit-node preview-orbit-node--two">S</i><i class="preview-orbit-node preview-orbit-node--three">K</i><b>SOT</b></div>
+              <div class="preview-grid-glow" aria-hidden="true"></div>
+              <div class="preview-sun" aria-hidden="true"></div>
+              <div class="preview-scan-line" aria-hidden="true"></div>
+              <div class="preview-orbit" aria-hidden="true"><i class="preview-orbit-node preview-orbit-node--one">O</i><i class="preview-orbit-node preview-orbit-node--two">S</i><i class="preview-orbit-node preview-orbit-node--three">K</i><b>SOT</b></div>
               <div class="preview-readout preview-readout--one"><span>THREAT TEMP</span><strong>OBSERVE</strong></div>
               <div class="preview-readout preview-readout--two"><span>INTENT FLOW</span><strong>84%</strong></div>
               <div class="preview-readout preview-readout--three"><span>EVIDENCE</span><strong>LOCAL</strong></div>

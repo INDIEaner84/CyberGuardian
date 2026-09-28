@@ -869,7 +869,7 @@
     const demo = lastCapture.mode === 'simulation';
     const packets = Array.isArray(lastCapture.packets) ? lastCapture.packets : [];
     const rows = packets.slice(0, 30).map((packet) => `<div class="packet-row"><span>${escapeHTML(packet.time || '—')}</span><strong>${escapeHTML(packet.source || '—')}</strong><strong>${escapeHTML(packet.destination || '—')}</strong><b>${escapeHTML(packet.protocol || '—')}</b></div>`).join('');
-    target.innerHTML = `<div class="ops-result-head"><span>${lastCapture.ok ? `${packets.length} METADATA ROWS` : 'CAPTURE NICHT VERFÜGBAR'}</span><small class="${demo ? 'is-demo' : ''}">${demo ? 'SAFE DEMO' : escapeHTML(String(lastCapture.engine || 'LOCAL').toUpperCase())}</small></div>${lastCapture.ok && packets.length ? `<div class="packet-table"><div class="packet-row packet-row--head"><span>TIME</span><span>SOURCE</span><span>DESTINATION</span><span>PROTO</span></div>${rows}</div>` : `<span class="ops-result-placeholder">${escapeHTML(lastCapture.notice || lastCapture.error || 'Keine Zeilen empfangen.')}</span>`}`;
+    target.innerHTML = `<div class="ops-result-head"><span>${lastCapture.ok ? `${packets.length} METADATA ROWS` : 'CAPTURE NICHT VERFÜGBAR'}</span><small class="${demo ? 'is-demo' : ''}">${demo ? 'SAFE DEMO' : escapeHTML(String(lastCapture.engine || 'LOCAL').toUpperCase())}</small></div>${lastCapture.ok && packets.length ? `<div class="packet-table" tabindex="0" role="region" aria-label="Capture-Metadaten"><div class="packet-row packet-row--head"><span>TIME</span><span>SOURCE</span><span>DESTINATION</span><span>PROTO</span></div>${rows}</div>` : `<span class="ops-result-placeholder">${escapeHTML(lastCapture.notice || lastCapture.error || 'Keine Zeilen empfangen.')}</span>`}`;
     renderCaptureInsights();
   }
 
@@ -895,7 +895,7 @@
     const mac = (opsState.mac || {})[selectedInterface] || { current: 'unknown', macchanger_available: false };
     $('#macStatus').innerHTML = `<span>CURRENT MAC</span><strong>${escapeHTML(mac.current || 'unknown')}</strong>`;
     if (lastMacPreview && lastMacPreview.interface === selectedInterface) {
-      $('#macPreviewOutput').innerHTML = `<div class="mac-preview"><span>PROPOSED LOCAL UNICAST</span><strong>${escapeHTML(lastMacPreview.proposed)}</strong><code>${escapeHTML(lastMacPreview.command_preview)}</code><small class="ops-result-placeholder">${escapeHTML(lastMacPreview.warning)}</small></div>`;
+      $('#macPreviewOutput').innerHTML = `<div class="mac-preview"><span>PROPOSED LOCAL UNICAST</span><strong>${escapeHTML(lastMacPreview.proposed)}</strong><code tabindex="0" role="region" aria-label="Befehlsvorschau">${escapeHTML(lastMacPreview.command_preview)}</code><small class="ops-result-placeholder">${escapeHTML(lastMacPreview.warning)}</small></div>`;
     } else {
       $('#macPreviewOutput').innerHTML = '<span class="ops-result-placeholder">Noch keine Vorschau. Das System bleibt unverändert.</span>';
     }
@@ -926,7 +926,7 @@
 
   function runDetails(run) {
     const details = run.details && Object.keys(run.details).length ? JSON.stringify(run.details, null, 2) : run.error || 'No additional details.';
-    return `<details class="tool-run-details" data-run-id="${escapeHTML(run.id)}"><summary>DETAILS ↗</summary><pre>${escapeHTML(details)}</pre></details>`;
+    return `<details class="tool-run-details" data-run-id="${escapeHTML(run.id)}"><summary>DETAILS ↗</summary><pre tabindex="0" role="region" aria-label="Run-Details">${escapeHTML(details)}</pre></details>`;
   }
 
   function renderTools() {
@@ -1049,7 +1049,12 @@
     $$('.modal', backdrop).forEach((item) => item.classList.add('is-hidden'));
     modal.classList.remove('is-hidden');
     const first = $('input, textarea, select', modal);
-    if (first) window.setTimeout(() => first.focus(), 30);
+    if (first) {
+      first.focus();
+      // Fallback for browsers that ignore focus in the same frame — but never steal focus from a
+      // field the user (or autofill) already moved to.
+      window.setTimeout(() => { if (!modal.contains(document.activeElement)) first.focus(); }, 30);
+    }
   }
 
   function closeModal() {

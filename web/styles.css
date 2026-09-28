@@ -30,7 +30,7 @@
   --green: #8cf0ad;
   --text: #e8f2ed;
   --muted: #8c9da2;
-  --dim: #50626c;
+  --dim: #7893a2; /* 4.5:1+ on every panel (WCAG AA); was #50626c */
   --mono: 'Space Mono', 'SFMono-Regular', Consolas, monospace;
   --display: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif;
   --ease: cubic-bezier(.22, .8, .24, 1);
@@ -58,6 +58,8 @@ body {
 button, input, textarea, select { font: inherit; }
 button { color: inherit; cursor: pointer; }
 button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+/* Scrollable text regions are keyboard-reachable (tabindex=0); their ring sits inside so panels cannot clip it. */
+[role="region"][tabindex="0"]:focus-visible { outline: 2px solid var(--cyan); outline-offset: -2px; }
 a { color: inherit; }
 
 .ambient { position: fixed; inset: 0; pointer-events: none; z-index: -2; }
@@ -218,7 +220,7 @@ body.prototype-open { overflow: hidden; }
 .prototype-card--active .prototype-card-footer b { color: var(--red); }
 .prototype-card-footer i { color: var(--red); font: 19px var(--display); font-style: normal; }
 .landing-footer { padding-top: 36px; color: var(--dim); font: 8px var(--mono); letter-spacing: .1em; }
-.landing-footer a { color: var(--cyan); text-decoration: none; }
+.landing-footer a { color: var(--cyan); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 .landing-footer a:hover { color: var(--red); }
 
 /* Application chrome */
@@ -378,10 +380,11 @@ body.prototype-open { overflow: hidden; }
 .plan-title { overflow: hidden; color: var(--text); font-size: 16px; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; }
 .plan-objective { overflow: hidden; margin-top: 4px; color: var(--muted); font-size: 10px; white-space: nowrap; text-overflow: ellipsis; }
 .plan-owner { display: inline-block; color: var(--cyan); font: 8px var(--mono); letter-spacing: .06em; }
-.plan-progress { align-self: center; }
+.plan-progress { align-self: center; display: block; width: 100%; padding: 7px 8px; border: 1px solid transparent; background: transparent; color: inherit; text-align: left; transition: border-color .2s var(--ease), background .2s var(--ease); }
+.plan-progress:hover { border-color: rgb(var(--cyan-rgb, 112 243 242) / .3); background: rgb(var(--cyan-rgb, 112 243 242) / .04); }
 .progress-value { display: flex; justify-content: space-between; margin-bottom: 5px; color: var(--muted); font: 8px var(--mono); }
 .progress-value strong { color: var(--text); font-weight: 400; }
-.progress-rail { height: 3px; background: rgb(var(--glint-rgb, 255 255 255) / .09); }
+.progress-rail { display: block; height: 3px; background: rgb(var(--glint-rgb, 255 255 255) / .09); }
 .progress-rail i { display: block; height: 100%; background: var(--cyan); box-shadow: 0 0 8px rgb(var(--cyan-rgb, 112 243 242) / .45); }
 .plan-row[data-status="done"] .progress-rail i { background: var(--green); box-shadow: 0 0 8px rgb(var(--green-rgb, 140 240 173) / .4); }
 .plan-row[data-status="blocked"] .progress-rail i { background: var(--red); }
@@ -669,8 +672,8 @@ body.prototype-open { overflow: hidden; }
 .drift-readout strong { color: var(--red); font: 800 54px/.7 var(--display); letter-spacing: .07em; text-shadow: 0 0 20px rgb(var(--red-rgb, 255 76 58) / .45); }
 .drift-readout--right { border-color: var(--cyan); align-items: end; text-align: right; }
 .drift-readout--right strong { color: var(--cyan); font-size: 39px; }
-.drift-scan-copy { position: absolute; top: 24px; left: 28px; color: rgb(var(--cyan-rgb, 112 243 242) / .5); font: 9px/1.7 var(--mono); letter-spacing: .12em; }
-.drift-scan-copy span { color: rgb(var(--red-rgb, 255 76 58) / .58); }
+.drift-scan-copy { position: absolute; top: 24px; left: 28px; color: rgb(var(--cyan-rgb, 112 243 242) / .72); font: 9px/1.7 var(--mono); letter-spacing: .12em; }
+.drift-scan-copy span { color: var(--red); }
 .drift-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-top: 14px; }
 .mini-readout { display: flex; flex-direction: column; padding: 16px 18px; }
 .mini-readout strong { margin: 8px 0 4px; color: var(--cyan); font: 800 31px/.8 var(--display); }

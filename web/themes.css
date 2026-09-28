@@ -196,7 +196,7 @@ html[data-theme="enterprise"] .side-label { margin-left: 40px; color: var(--lcar
 html[data-theme="enterprise"] .main-nav { gap: 6px; padding-left: 38px; }
 html[data-theme="enterprise"] .nav-item { --nav-c: var(--lcars-d); grid-template-columns: auto 1fr; min-height: 38px; padding: 0 14px 0 12px; border: 0; border-radius: 19px 0 0 19px; background: var(--nav-c); color: #000; font: 700 14px/1 var(--display); letter-spacing: .08em; text-align: right; box-shadow: none; }
 html[data-theme="enterprise"] .nav-item :is(.nav-symbol, b) { display: none; }
-html[data-theme="enterprise"] .nav-item .nav-number { color: rgb(0 0 0 / .55); font-size: 11px; }
+html[data-theme="enterprise"] .nav-item .nav-number { color: rgb(0 0 0 / .8); font-size: 11px; }
 html[data-theme="enterprise"] .nav-item:nth-child(2) { --nav-c: var(--lcars-b); }
 html[data-theme="enterprise"] .nav-item:nth-child(3) { --nav-c: var(--lcars-c); }
 html[data-theme="enterprise"] .nav-item:nth-child(4) { --nav-c: var(--lcars-a); }
@@ -221,6 +221,7 @@ html[data-theme="enterprise"] :is(.tag, .status-pill, .pot-state, .tool-status, 
 html[data-theme="enterprise"] :is(.tag--green, .tag--done, .status-pill--done, .sync-chip b) { --pill: var(--lcars-f); }
 html[data-theme="enterprise"] :is(.tag--high, .status-pill--queued) { --pill: var(--lcars-d); }
 html[data-theme="enterprise"] .status-pill--blocked { --pill: var(--lcars-e); }
+html[data-theme="enterprise"] :is(.pot-state, .tool-status, .severity) { min-height: 15px; padding: 2px 8px; }
 html[data-theme="enterprise"] .world-lab-status strong { color: #000; }
 html[data-theme="enterprise"] .severity::before { display: none; }
 html[data-theme="enterprise"] .filter-tab--active::after { height: 5px; border-radius: 999px; background: var(--lcars-a); }
@@ -258,7 +259,10 @@ html[data-theme="enterprise"] .preview-rail { border-right: 10px solid var(--lca
   --glint-rgb: 255 236 226;
   --shadow-rgb: 0 0 0;
   --void: #0a0708;
-  --dim: #8f7f80;
+  --red: #ff3347;              /* red as text on black: 5.5:1 */
+  --red-hot: #ff3347;
+  --red-fill: #e3001b;         /* red under white text: 4.9:1 */
+  --dim: #9d8e8f;
   --display: 'Barlow Condensed', 'Noto Sans JP', 'Arial Narrow', Impact, sans-serif;
   --headline: 'Barlow Condensed', 'Noto Sans JP', 'Arial Narrow', Impact, sans-serif;
   --jp: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
@@ -291,19 +295,20 @@ html[data-theme="akira"] .hero-status-card::before { opacity: .8; background: re
 html[data-theme="akira"] .sidebar { background: rgb(10 7 8 / .8); border-right: 1px solid rgb(236 16 36 / .35); }
 html[data-theme="akira"] .nav-item { border-radius: 999px; font-style: italic; }
 html[data-theme="akira"] .nav-item:hover { background: rgb(246 239 229 / .06); border-color: rgb(246 239 229 / .3); }
-html[data-theme="akira"] .nav-item--active { color: #fff; background: var(--red); border-color: var(--red); box-shadow: 0 0 20px rgb(236 16 36 / .35); }
+html[data-theme="akira"] .nav-item--active { color: #fff; background: var(--red-fill); border-color: var(--red-fill); box-shadow: 0 0 20px rgb(236 16 36 / .35); }
 html[data-theme="akira"] .nav-item--active :is(.nav-symbol, .nav-number, b) { color: #fff; }
 html[data-theme="akira"] .button { border-radius: 999px; font-style: italic; font-weight: 700; letter-spacing: .12em; }
-html[data-theme="akira"] .button--primary { padding-right: 34px; color: #fff; background: linear-gradient(90deg, var(--red) 0 calc(100% - 20px), #f6efe5 calc(100% - 20px)); border-color: var(--red); }
-html[data-theme="akira"] .button--primary:hover { color: #fff; background: linear-gradient(90deg, #ff2a3d 0 calc(100% - 20px), #fff calc(100% - 20px)); border-color: #ff2a3d; }
+html[data-theme="akira"] .button--primary { padding-right: 34px; color: #fff; background: linear-gradient(90deg, var(--red-fill) 0 calc(100% - 20px), #f6efe5 calc(100% - 20px)); border-color: var(--red-fill); }
+html[data-theme="akira"] .button--primary:hover { color: #fff; background: linear-gradient(90deg, #c8001a 0 calc(100% - 20px), #fff calc(100% - 20px)); border-color: #c8001a; }
 html[data-theme="akira"] :is(.tag, .status-pill, .pot-state, .tool-status, .sync-chip b, .design-lab-status, .world-lab-status, .prototype-trait, .icon-button) { border-radius: 999px; }
-html[data-theme="akira"] .tag--high { color: #fff; background: var(--red); border-color: var(--red); }
+html[data-theme="akira"] .tag--high { color: #fff; background: var(--red-fill); border-color: var(--red-fill); }
 html[data-theme="akira"] .eyebrow { color: var(--red); }
 html[data-theme="akira"] .eyebrow-line { background: var(--text); box-shadow: none; }
 html[data-theme="akira"] .health-ring { box-shadow: 0 0 34px rgb(236 16 36 / .35); }
 html[data-theme="akira"] .theme-switch select { border-radius: 999px; }
 html[data-theme="akira"] :is(.preview-agent, .preview-action, .preview-step) { border-radius: 999px; }
-html[data-theme="akira"] :is(.preview-agent--active, .preview-action--active, .preview-step--active) { background: var(--red); color: #fff; }
+html[data-theme="akira"] :is(.preview-agent--active, .preview-action--active, .preview-step--active) { background: var(--red-fill); color: #fff; }
+html[data-theme="akira"] :is(.preview-agent--active, .preview-action--active, .preview-step--active) :is(b, small, strong, span) { color: #fff; }
 html[data-theme="akira"] .prototype-preview-stage { border-top: 3px solid var(--red); }
 
 /* ===========================================================================
@@ -314,7 +319,7 @@ html[data-theme="akira"] .prototype-preview-stage { border-top: 3px solid var(--
   --surface-warm-rgb: 32 6 18;
   --cyan-rgb: 0 240 255;
   --red-rgb: 252 238 10;       /* the signature yellow carries primary + hot */
-  --orange-rgb: 255 0 60;      /* danger red */
+  --orange-rgb: 255 56 96;     /* danger red (4.6:1 even on the yellow-tinted cards) */
   --yellow-rgb: 252 238 10;
   --green-rgb: 0 255 159;
   --magenta-rgb: 255 42 109;
@@ -324,7 +329,7 @@ html[data-theme="akira"] .prototype-preview-stage { border-top: 3px solid var(--
   --glint-rgb: 0 240 255;
   --shadow-rgb: 0 0 0;
   --void: #07060b;
-  --dim: #7f78a0;
+  --dim: #8f89b3;
   --display: 'Chakra Petch', 'Barlow Condensed', 'Arial Narrow', sans-serif;
   --headline: 'Chakra Petch', 'Barlow Condensed', 'Arial Narrow', sans-serif;
   --notch: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
@@ -354,7 +359,7 @@ html[data-theme="cyberpunk"] .button { clip-path: var(--notch-sm); text-transfor
 html[data-theme="cyberpunk"] .button--primary { color: #07060b; }
 html[data-theme="cyberpunk"] .button--primary:hover { color: #07060b; background: #fff45c; border-color: #fff45c; text-shadow: 2px 0 rgb(255 0 60 / .6), -2px 0 rgb(0 240 255 / .6); }
 html[data-theme="cyberpunk"] :is(.tag, .status-pill, .prototype-trait, .design-lab-status, .world-lab-status) { clip-path: var(--notch-sm); }
-html[data-theme="cyberpunk"] .tag--high { color: #fff; background: var(--orange); border-color: var(--orange); }
+html[data-theme="cyberpunk"] .tag--high { color: #07060b; background: var(--orange); border-color: var(--orange); }
 html[data-theme="cyberpunk"] .eyebrow { color: var(--red); }
 html[data-theme="cyberpunk"] .eyebrow-line { background: var(--cyan); box-shadow: 0 0 9px var(--cyan); }
 html[data-theme="cyberpunk"] .metric-value { text-shadow: 2px 0 rgb(255 0 60 / .6), -2px 0 rgb(0 240 255 / .55); }
@@ -365,6 +370,7 @@ html[data-theme="cyberpunk"] .theme-switch select { clip-path: var(--notch-sm); 
 html[data-theme="cyberpunk"] .prototype-preview-stage { clip-path: var(--notch); border-color: rgb(252 238 10 / .5); }
 html[data-theme="cyberpunk"] :is(.preview-action, .preview-step, .preview-agent) { clip-path: var(--notch-sm); }
 html[data-theme="cyberpunk"] :is(.preview-action--active, .preview-step--active) { color: #07060b; background: var(--red); }
+html[data-theme="cyberpunk"] :is(.preview-action--active, .preview-step--active) b { color: #07060b; }
 
 /* ===========================================================================
    04 · AGENTUR — creative studio: paper, huge serif, whitespace, one accent
@@ -373,8 +379,8 @@ html[data-theme="cyberpunk"] :is(.preview-action--active, .preview-step--active)
   --surface-rgb: 244 241 234;  /* paper */
   --surface-warm-rgb: 238 233 223;
   --cyan-rgb: 22 22 22;        /* ink replaces the neon accent */
-  --red-rgb: 240 64 0;         /* the single accent: vermilion */
-  --orange-rgb: 206 92 0;
+  --red-rgb: 198 53 0;         /* the single accent: vermilion, deep enough for small text (4.7:1) */
+  --orange-rgb: 173 77 0;
   --yellow-rgb: 168 124 0;
   --green-rgb: 0 120 72;
   --magenta-rgb: 168 44 150;
@@ -385,8 +391,9 @@ html[data-theme="cyberpunk"] :is(.preview-action--active, .preview-step--active)
   --shadow-rgb: 70 56 36;
   --void: #f4f1ea;
   --paper-hi: #fffdf8;
+  --vermilion: #f04000;        /* the bright accent, for graphics only (sun, dots, rings) */
   --muted: #5f5a52;
-  --dim: #8b857a;
+  --dim: #625e56;
   --line: rgb(22 22 22 / .14);
   --line-strong: rgb(22 22 22 / .75);
   --display: 'Instrument Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -403,6 +410,8 @@ html[data-theme="agentur"] :is(.hero-copy h1, .view-heading h1, .section-intro h
 html[data-theme="agentur"] .hero-copy h1 { font-size: clamp(62px, 8.8vw, 136px); line-height: .86; letter-spacing: -.035em; }
 html[data-theme="agentur"] .hero-copy h1::after { display: none; }
 html[data-theme="agentur"] .hero-copy h1 em, html[data-theme="agentur"] :is(.view-heading h1, .section-intro h2, .mission-overview h2, .design-lab-heading h3, .world-lab-heading h3, .status-card-copy h2, .about-hero h2, .prototype-modal-head h2) span { font-style: italic; }
+/* Display-size accents keep the bright vermilion (large text needs 3:1; it has 3.4:1 on paper). */
+html[data-theme="agentur"] :is(.hero-copy h1, .view-heading h1, .section-intro h2, .mission-overview h2, .design-lab-heading h3, .world-lab-heading h3, .status-card-copy h2, .about-hero h2, .prototype-modal-head h2) span { color: var(--vermilion); }
 html[data-theme="agentur"] .hero-copy h1 em { color: var(--text); -webkit-text-stroke: 0; }
 html[data-theme="agentur"] .view-heading h1 { font-size: clamp(46px, 5.6vw, 86px); line-height: .9; }
 html[data-theme="agentur"] .panel-heading h2 { font-size: 30px; line-height: .95; }
@@ -411,7 +420,7 @@ html[data-theme="agentur"] .metric-value { font-size: 46px; }
 html[data-theme="agentur"] .mission-stat strong { font-size: 44px; }
 html[data-theme="agentur"] .hero-lede { color: var(--muted); font-size: 19px; line-height: 1.45; }
 html[data-theme="agentur"] .eyebrow { color: var(--text); font-weight: 400; letter-spacing: .14em; }
-html[data-theme="agentur"] .eyebrow-line { background: var(--red); box-shadow: none; }
+html[data-theme="agentur"] .eyebrow-line { background: var(--vermilion); box-shadow: none; }
 html[data-theme="agentur"] :is(.panel, .metric-card, .tab-guide, .hero-status-card, .mission-overview, .prototype-card, .design-lab, .honeypot-card, .tool-card, .modal, .prototype-modal, .ops-capability, .lab-callout, .about-hero, .toast, .design-variant, .safe-card, .workflow-strip) { border: 1px solid var(--line); background: var(--paper-hi); box-shadow: none; }
 html[data-theme="agentur"] :is(.hero-status-card, .mission-overview, .prototype-card, .design-lab, .tab-guide, .about-hero)::before, html[data-theme="agentur"] :is(.metric-card, .tab-guide, .mission-overview, .about-hero, .honeypot-card)::after, html[data-theme="agentur"] .status-card-glow { display: none; }
 html[data-theme="agentur"] .prototype-card { transform: none; }
@@ -422,7 +431,7 @@ html[data-theme="agentur"] .topbar { border-bottom: 1px solid var(--line); backg
 html[data-theme="agentur"] .brand-mark { border-color: var(--text); transform: none; box-shadow: none; }
 html[data-theme="agentur"] .brand-mark::before { display: none; }
 html[data-theme="agentur"] .brand-mark i { background: var(--text); box-shadow: none; }
-html[data-theme="agentur"] .brand-mark i:nth-child(3) { background: var(--red); }
+html[data-theme="agentur"] .brand-mark i:nth-child(3) { background: var(--vermilion); }
 html[data-theme="agentur"] .brand-lockup strong { font-weight: 400; letter-spacing: .06em; font-synthesis: none; }
 html[data-theme="agentur"] .sidebar { background: transparent; }
 html[data-theme="agentur"] .nav-item { border: 0; background: none; color: var(--muted); font: 500 13px var(--display); letter-spacing: 0; }
@@ -430,7 +439,7 @@ html[data-theme="agentur"] .nav-item :is(.nav-symbol, b) { visibility: hidden; }
 html[data-theme="agentur"] .nav-item:hover { color: var(--text); background: none; border-color: transparent; }
 html[data-theme="agentur"] .nav-item--active { color: var(--text); background: none; box-shadow: none; font-weight: 700; }
 html[data-theme="agentur"] .nav-item--active .nav-symbol { visibility: visible; color: var(--red); font-size: 0; }
-html[data-theme="agentur"] .nav-item--active .nav-symbol::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--red); }
+html[data-theme="agentur"] .nav-item--active .nav-symbol::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--vermilion); }
 html[data-theme="agentur"] .button { min-height: 40px; padding: 0 20px; border: 1px solid var(--text); border-radius: 999px; background: transparent; color: var(--text); font: 700 11px/1 var(--display); letter-spacing: .04em; box-shadow: none; }
 html[data-theme="agentur"] .button:hover { background: var(--text); border-color: var(--text); color: var(--void); transform: none; box-shadow: none; }
 html[data-theme="agentur"] .button--primary { background: var(--text); color: var(--void); }
@@ -439,12 +448,19 @@ html[data-theme="agentur"] .button--tiny { min-height: 30px; padding: 0 14px; fo
 html[data-theme="agentur"] :is(.tag, .status-pill, .pot-state, .tool-status, .sync-chip b, .design-lab-status, .world-lab-status, .prototype-trait) { border-radius: 999px; background: transparent; }
 html[data-theme="agentur"] .icon-button:not(.icon-button--quiet) { border-radius: 50%; border-color: var(--line-strong); background: transparent; }
 html[data-theme="agentur"] :is(.status-dot, .live-label i, .brand-mark i, .metric-rail i, .safe-meter i, .progress-rail i, .health-ring, .status-card-scan i) { box-shadow: none; }
-html[data-theme="agentur"] .health-ring { background: conic-gradient(var(--red) 0 calc(var(--ring) * 1%), rgb(22 22 22 / .09) calc(var(--ring) * 1%) 100%); }
+html[data-theme="agentur"] .health-ring { background: conic-gradient(var(--vermilion) 0 calc(var(--ring) * 1%), rgb(22 22 22 / .09) calc(var(--ring) * 1%) 100%); }
 html[data-theme="agentur"] .health-ring::before { background: var(--paper-hi); }
-html[data-theme="agentur"] .sun-halo { background: var(--red); box-shadow: none; filter: none; }
+html[data-theme="agentur"] .sun-halo { background: var(--vermilion); box-shadow: none; filter: none; }
 html[data-theme="agentur"] :is(.sun-core, .visual-bracket, .visual-reticle), html[data-theme="agentur"] .hero-visual::before { display: none; }
 html[data-theme="agentur"] .hero-visual::after { content: 'Fig. 01 — shared context'; color: var(--muted); font: italic 16px var(--headline); letter-spacing: 0; }
 html[data-theme="agentur"] .orbit { border-color: rgb(22 22 22 / .22); }
+html[data-theme="agentur"] .mesh-map-core strong { color: var(--text); }
+/* Signal Drift: the readouts sit on the ink skyline, so they switch to paper tones. */
+html[data-theme="agentur"] .drift-readout { border-color: var(--vermilion); }
+html[data-theme="agentur"] .drift-readout--right { border-color: var(--paper-hi); }
+html[data-theme="agentur"] :is(.drift-readout span, .drift-readout small) { color: #c9c2b6; }
+html[data-theme="agentur"] .drift-readout strong { color: var(--vermilion); }
+html[data-theme="agentur"] .drift-readout--right strong { color: var(--paper-hi); }
 html[data-theme="agentur"] .orbit i { background: var(--text); box-shadow: none; }
 html[data-theme="agentur"] .theme-switch select { border-radius: 999px; border-color: var(--line-strong); background-color: transparent; color: var(--text); }
 html[data-theme="agentur"] .drift-stage { border-color: var(--line); }
@@ -452,6 +468,7 @@ html[data-theme="agentur"] .prototype-backdrop, html[data-theme="agentur"] .moda
 html[data-theme="agentur"] .prototype-preview-stage { border: 1px solid var(--line); background: var(--paper-hi); }
 html[data-theme="agentur"] :is(.preview-agent, .preview-action, .preview-step) { border-radius: 999px; box-shadow: none; }
 html[data-theme="agentur"] :is(.preview-action--active, .preview-step--active) { background: var(--text); color: var(--void); }
+html[data-theme="agentur"] :is(.preview-action--active, .preview-step--active) b { color: var(--vermilion); }
 
 /* ===========================================================================
    05 · U-BOOT — submarine control room: phosphor CRT, brass, silent-running red
@@ -471,7 +488,7 @@ html[data-theme="agentur"] :is(.preview-action--active, .preview-step--active) {
   --glint-rgb: 112 255 164;
   --shadow-rgb: 0 0 0;
   --void: #030b08;
-  --dim: #6b8b77;
+  --dim: #7a9a86;
   --brass: #b08d57; --brass-hi: #e0c088; --brass-lo: #6b5230;
   --display: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif;
   --headline: 'Big Shoulders Stencil Display', 'Barlow Condensed', 'Arial Narrow', sans-serif;
@@ -511,8 +528,8 @@ html[data-theme="uboot"] .nav-item:hover { border-color: var(--brass); backgroun
 html[data-theme="uboot"] .nav-item--active { color: var(--cyan); border-color: var(--brass-hi); background: linear-gradient(#123524, #08140f); box-shadow: inset 0 0 14px rgb(112 255 164 / .18); }
 html[data-theme="uboot"] .button { border: 1px solid var(--brass); border-radius: 5px; background: linear-gradient(#1c1a12, #0b0b08); color: var(--brass-hi); font: 700 12px/1 var(--headline); letter-spacing: .14em; box-shadow: inset 0 1px 0 rgb(224 192 136 / .25); }
 html[data-theme="uboot"] .button:hover { background: linear-gradient(#26231a, #12110c); border-color: var(--brass-hi); color: #fff1cf; box-shadow: inset 0 1px 0 rgb(224 192 136 / .35), 0 0 16px rgb(224 192 136 / .12); }
-html[data-theme="uboot"] .button--primary { border-color: #ff5a44; background: radial-gradient(circle at 50% 28%, #ff735c, #b3180c 70%); color: #1a0503; box-shadow: 0 0 22px rgb(255 60 42 / .35), inset 0 1px 0 rgb(255 255 255 / .3); }
-html[data-theme="uboot"] .button--primary:hover { background: radial-gradient(circle at 50% 28%, #ff8a74, #c61d10 70%); color: #1a0503; }
+html[data-theme="uboot"] .button--primary { border-color: #ff5a44; background: radial-gradient(circle at 50% 28%, #ff8f78, #f0402c 70%); color: #1a0503; box-shadow: 0 0 22px rgb(255 60 42 / .35), inset 0 1px 0 rgb(255 255 255 / .3); }
+html[data-theme="uboot"] .button--primary:hover { background: radial-gradient(circle at 50% 28%, #ffa08c, #ff4a36 70%); color: #1a0503; }
 html[data-theme="uboot"] .button--tiny { font-size: 10px; }
 html[data-theme="uboot"] :is(.tag, .status-pill, .pot-state, .tool-status, .sync-chip b, .design-lab-status, .world-lab-status, .prototype-trait) { border-radius: 3px; }
 html[data-theme="uboot"] .eyebrow { color: var(--orange); }
