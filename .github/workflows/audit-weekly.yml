@@ -37,7 +37,7 @@ jobs:
           if [ -f "go.mod" ]; then echo "pm=go" >> $GITHUB_OUTPUT; fi
 
       - name: Run OpenCode Audit
-        uses: anomalyco/opencode/github@latest
+        uses: anomalyco/opencode/github@77fc88c8ade8e5a620ebbe1197f3a572d29ae91a # github-v1.2.19 (what "latest" pointed to), pinned to a commit
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
