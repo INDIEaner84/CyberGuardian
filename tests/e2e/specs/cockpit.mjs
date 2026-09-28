@@ -73,6 +73,31 @@ test('cockpit: a new plan round-trips through the API into the plan board', asyn
   await assertClean(handle);
 });
 
+test('cockpit: returning to a background tab refreshes at once instead of on the next poll', async ({ open, base }) => {
+  const handle = await open({ path: null });
+  const { page } = handle;
+  // Switch the 8 s poll off, so only the visibility handler can bring the change in.
+  await page.evaluateOnNewDocument(() => {
+    const original = window.setInterval.bind(window);
+    window.setInterval = (callback, delay, ...rest) => (delay === 8000 ? 0 : original(callback, delay, ...rest));
+  });
+  await page.goto(`${base}/`, { waitUntil: 'networkidle0' });
+  await enterCockpit(page);
+  const title = `E2E Tab Return ${Date.now().toString(36)}`;
+  const response = await fetch(`${base}/api/plans`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, objective: 'Anderer Client legt einen Plan an.', owner: 'ORBIT', priority: 'normal' }),
+  });
+  assert.equal(response.status, 201);
+  const shown = (expected) => [...document.querySelectorAll('#planList .plan-title')].some((element) => element.textContent === expected);
+  await pause(400);
+  assert.equal(await page.evaluate(shown, title), false, 'no refresh without the poll');
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await page.waitForFunction(shown, { timeout: 3000 }, title);
+  await assertClean(handle);
+});
+
 test('cockpit: honeypot lab creates, activates and feeds a synthetic signal', async ({ open, base }) => {
   const handle = await open();
   const { page } = handle;

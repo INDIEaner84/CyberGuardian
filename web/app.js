@@ -1493,6 +1493,8 @@
     applyMotionPreference(storedReduced);
     await loadState(true);
     window.setInterval(() => { if (!document.hidden) loadState(false); }, 8000);
+    // Hidden tabs skip the poll; coming back refreshes at once instead of on the next 8 s tick.
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) loadState(false); });
   }
 
   boot();
