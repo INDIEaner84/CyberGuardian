@@ -22,6 +22,9 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 from .defense_ops import DefenseOps
+from .detection_replay import rule_catalog
+from .offline_import import FORMATS, MAX_ALERTS, MAX_IMPORT_BYTES, MAX_LINES
+from .vm_lab import VMLab
 
 
 def _now() -> str:
@@ -36,9 +39,10 @@ def _clean(value: Any, default: str = "", limit: int = 220) -> str:
 class ToolCatalog:
     """Registry and safe execution gateway for all dashboard-visible tools."""
 
-    def __init__(self, control_plane, defense_ops: Optional[DefenseOps] = None):
+    def __init__(self, control_plane, defense_ops: Optional[DefenseOps] = None, vm_lab: Optional[VMLab] = None):
         self.control_plane = control_plane
         self.defense_ops = defense_ops or DefenseOps()
+        self.vm_lab = vm_lab
         self._definitions = self._build_definitions()
 
     def _build_definitions(self) -> List[Dict[str, Any]]:
@@ -163,6 +167,30 @@ class ToolCatalog:
                 "boundary": "ALLOWLIST / BOUNDED",
                 "actions": [{"id": "capability_scan", "label": "CAPABILITIES", "description": "lokale Toolchain prüfen"}],
             },
+            {
+                "id": "vm_lab", "name": "VM LAB SENSOR", "module": "core.vm_lab",
+                "category": "defense", "icon": "▣", "accent": "green",
+                "summary": "Status des optionalen QEMU-Gast-Sensors lesen.",
+                "explain": "Diese Atlas-Aktion prüft ausschließlich Erreichbarkeit und Alert-Anzahl. Tests können nur im VM Lab mit Operator-Schlüssel gestartet werden.",
+                "boundary": "SENSOR STATUS / NO TEST RUN",
+                "actions": [{"id": "sensor_status", "label": "SENSOR PRÜFEN", "description": "VM-Sensorstatus lesen"}],
+            },
+            {
+                "id": "detection_replay", "name": "OFFLINE DETECTION REPLAY", "module": "core.detection_replay",
+                "category": "defense", "icon": "◇", "accent": "cyan",
+                "summary": "Feste Regeln für gespeicherte Ereignisse transparent machen.",
+                "explain": "Der Atlas zeigt nur den Regelkatalog. Ein begrenztes Offline-Replay kann im VM Lab gestartet werden; es erzeugt keine Live-Alerts.",
+                "boundary": "RULES ONLY / OFFLINE",
+                "actions": [{"id": "rules_overview", "label": "REGELN LESEN", "description": "feste Offline-Regeln ansehen"}],
+            },
+            {
+                "id": "offline_import", "name": "OFFLINE ALERT IMPORT", "module": "core.offline_import",
+                "category": "evidence", "icon": "▤", "accent": "green",
+                "summary": "Begrenzte Zeek-/Suricata-Metadaten aus einer lokalen JSONL-Datei übernehmen.",
+                "explain": "Der Atlas zeigt nur Formate und Limits; Datei-Import ist ein separater, bestätigter Schritt im VM Lab. Keine Sensor-Installation oder Live-Datenquelle.",
+                "boundary": "FORMAT INFO / NO UPLOAD",
+                "actions": [{"id": "format_overview", "label": "FORMATE LESEN", "description": "Import-Grenzen prüfen"}],
+            },
         ]
 
     @staticmethod
@@ -195,8 +223,11 @@ class ToolCatalog:
             availability, status = baseline.exists(), "ready" if baseline.exists() else "limited"
         elif tool_id == "backup_rollback":
             availability, status = True, "ready"
-        elif tool_id in {"ids_ips", "defense_ops"}:
+        elif tool_id in {"ids_ips", "defense_ops", "detection_replay", "offline_import"}:
             availability, status = True, "simulated" if tool_id == "ids_ips" else "ready"
+        elif tool_id == "vm_lab":
+            availability = bool(self.vm_lab and self.vm_lab.status(collect=False)["connected"])
+            status = "ready" if availability else "limited"
         else:
             availability, status = True, "ready"
         return {"availability": availability, "status": status}
@@ -297,6 +328,18 @@ class ToolCatalog:
         if tool_id == "defense_ops" and action == "capability_scan":
             overview = self.defense_ops.overview()
             return {"mode": "allowlisted", "summary": f"Defense Ops geprüft; Capture-Engine: {overview.get('capture_engine')}.", "details": overview}
+        if tool_id == "vm_lab" and action == "sensor_status":
+            status = self.vm_lab.status(collect=False) if self.vm_lab else {"enabled": False, "connected": False, "mode": "disabled"}
+            return {"mode": "read-only", "summary": "VM-Sensor erreichbar." if status["connected"] else "VM-Sensor nicht verbunden.",
+                    "details": {"enabled": status["enabled"], "connected": status["connected"],
+                                "mode": status["mode"], "alerts": len(self.control_plane.snapshot().get("vm_alerts", []))}}
+        if tool_id == "detection_replay" and action == "rules_overview":
+            return {"mode": "read-only", "summary": "Vier feste Offline-Replay-Regeln verfügbar; kein Replay gestartet.",
+                    "details": {"rules": rule_catalog(), "live_detection": False}}
+        if tool_id == "offline_import" and action == "format_overview":
+            return {"mode": "read-only", "summary": "Offline-Import-Formate und Grenzen gelesen; keine Datei eingelesen.",
+                    "details": {"formats": sorted(FORMATS), "max_bytes": MAX_IMPORT_BYTES,
+                                "max_lines": MAX_LINES, "max_alerts": MAX_ALERTS, "live_detection": False}}
         raise ValueError("Tool-Aktion nicht erlaubt")
 
     def run(self, tool_id: Any, action: Any) -> Dict[str, Any]:

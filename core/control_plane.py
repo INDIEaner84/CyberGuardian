@@ -20,6 +20,7 @@ from __future__ import annotations
 import copy
 import json
 import os
+import re
 import secrets
 import threading
 from datetime import datetime, timedelta, timezone
@@ -125,6 +126,8 @@ class ControlPlane:
             },
             "tool_states": {},
             "tool_runs": [],
+            "vm_alerts": [],
+            "imported_alerts": [],
             "agents": [
                 {
                     "id": "agent-orbit",
@@ -584,6 +587,100 @@ class ControlPlane:
             )
             self._save()
             return {"signal": copy.deepcopy(signal), "incident": copy.deepcopy(incident), "honeypot": copy.deepcopy(honeypot)}
+
+    def record_vm_alert(self, event: Dict[str, Any]) -> Dict[str, Any]:
+        """Deduplicate and audit a bounded alert observed by the guest sensor."""
+        if not isinstance(event, dict):
+            raise ValueError("Ungültiges VM-Ereignis")
+        boot_id, run_id = event.get("boot_id"), event.get("run_id")
+        seq, rule = event.get("seq"), event.get("rule")
+        if (not isinstance(boot_id, str) or len(boot_id) != 16 or
+            not isinstance(run_id, str) or len(run_id) != 32 or
+            not all(c in "0123456789abcdef" for c in boot_id + run_id) or
+            type(seq) is not int or not 1 <= seq <= 1000000 or
+            rule not in {"path-discovery", "login-retries"}):
+            raise ValueError("Ungültiges VM-Ereignis")
+        with self._lock:
+            alerts = self._state.setdefault("vm_alerts", [])
+            event_id = f"{boot_id}:{seq}"
+            existing = next((item for item in alerts if item["id"] == event_id), None)
+            if existing:
+                return copy.deepcopy(existing)
+            alert = {"id": event_id, "run_id": run_id, "rule": rule,
+                     "severity": "high" if rule == "login-retries" else "medium",
+                     "summary": "Wiederholte Login-Anfragen an den VM-Decoy" if rule == "login-retries"
+                     else "Mehrere geschützte Pfade im VM-Decoy angefragt",
+                     "source": "VM HTTP sensor", "observed_at": _clean(event.get("observed_at"), "", 32),
+                     "received_at": iso(), "count": 3 if rule == "login-retries" else 2,
+                     "simulated": False, "status": "open", "reviews": []}
+            alerts.insert(0, alert)
+            self._state["vm_alerts"] = alerts[:100]
+            self._activity("vm.alert", f"VM-Sensor: {alert['summary']} ({rule}).", "alert")
+            self._save()
+            return copy.deepcopy(alert)
+
+    def import_offline_alerts(self, records: List[Dict[str, Any]], source_format: str, ignored: int = 0) -> Dict[str, Any]:
+        """Store only normalized, unverified metadata from the bounded parser."""
+        if (not isinstance(source_format, str) or source_format not in {"suricata-eve", "zeek-notice"} or
+            not isinstance(records, list) or not 1 <= len(records) <= 50):
+            raise ValueError("Ungültiger Offline-Import")
+        fields = ("id", "format", "signature", "source_ip", "destination_ip", "sensor_timestamp",
+                  "severity", "origin", "verified", "live")
+        safe_records = []
+        for item in records:
+            if (not isinstance(item, dict) or not set(fields).issubset(item) or not isinstance(item.get("id"), str) or
+                not re.fullmatch(r"IMP-[0-9a-f]{24}", item["id"]) or item.get("format") != source_format or
+                item.get("origin") != "offline-import" or item.get("verified") is not False or item.get("live") is not False or
+                not isinstance(item.get("severity"), str) or item["severity"] not in {"low", "medium", "high"} or
+                not isinstance(item.get("signature"), str) or not 1 <= len(item["signature"]) <= 100 or
+                not item["signature"].isprintable()):
+                raise ValueError("Ungültige Offline-Metadaten")
+            safe_records.append({key: item[key] for key in fields})
+        with self._lock:
+            stored = self._state.setdefault("imported_alerts", [])
+            known = {item.get("id") for item in stored}
+            added = 0
+            for item in safe_records:
+                if item["id"] in known:
+                    continue
+                item["imported_at"] = iso()
+                stored.insert(0, item)
+                known.add(item["id"])
+                added += 1
+            self._state["imported_alerts"] = stored[:200]
+            duplicates = len(records) - added
+            self._activity("evidence.import", f"Offline-Import {source_format}: {added} Metadaten übernommen, {duplicates} Duplikate, {ignored} andere Zeilen ignoriert.", "cyan")
+            self._save()
+            return {"mode": "offline-import", "format": source_format, "accepted": added,
+                    "duplicates": duplicates, "ignored_unrelated": ignored,
+                    "stored": len(self._state["imported_alerts"]), "verified": False, "live_detection": False}
+
+    def review_vm_alert(self, alert_id: str, note: Any = "") -> Dict[str, Any]:
+        """Acknowledge an observed guest alert or append a short operator note.
+
+        Sensor evidence (rule, run, timestamp) is never modified by review.
+        Older persisted alerts without review fields are handled in place.
+        """
+        if (not isinstance(note, str) or len(note) > 240 or
+            any((ord(char) < 32 and char not in "\r\n\t") or ord(char) == 127 for char in note)):
+            raise ValueError("Notiz muss druckbarer Text mit höchstens 240 Zeichen sein")
+        clean_note = " ".join(note.split())
+        with self._lock:
+            alert = next((a for a in self._state.get("vm_alerts", []) if a.get("id") == alert_id), None)
+            if alert is None:
+                raise KeyError(f"VM-Alert nicht gefunden: {alert_id}")
+            if alert.get("status", "open") == "acknowledged" and not clean_note:
+                raise ValueError("Bereits quittiert; für weitere Einträge eine Notiz angeben")
+            action = "note" if alert.get("status") == "acknowledged" else "acknowledged"
+            timestamp = iso()
+            alert["status"] = "acknowledged"
+            alert.setdefault("acknowledged_at", timestamp)
+            alert.setdefault("reviews", []).append({"action": action, "actor": "OPERATOR",
+                                                       "note": clean_note, "created_at": timestamp})
+            alert["reviews"] = alert["reviews"][-12:]
+            self._activity("vm.alert.review", f"VM-Alert {alert_id} {'kommentiert' if action == 'note' else 'quittiert'}.", "green")
+            self._save()
+            return copy.deepcopy(alert)
 
     def acknowledge_incident(self, incident_id: str) -> Dict[str, Any]:
         with self._lock:

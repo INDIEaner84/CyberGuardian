@@ -39,6 +39,22 @@ class ControlPlaneTests(unittest.TestCase):
         self.assertEqual(result["signal"]["action"], "captured / no response")
         self.assertEqual(self.plane.snapshot()["stats"]["open_incidents"], 2)
 
+    def test_vm_alert_review_migrates_old_entries_and_limits_history(self):
+        alert = self.plane.record_vm_alert({"boot_id": "a" * 16, "run_id": "b" * 32,
+                                            "seq": 1, "rule": "login-retries"})
+        with self.plane._lock:
+            self.plane._state["vm_alerts"][0].pop("status")
+            self.plane._state["vm_alerts"][0].pop("reviews")
+            self.plane._save()
+        reviewed = self.plane.review_vm_alert(alert["id"], "erstes Review")
+        self.assertEqual(reviewed["status"], "acknowledged")
+        self.assertEqual(reviewed["run_id"], alert["run_id"])
+        for index in range(15):
+            self.plane.review_vm_alert(alert["id"], f"Notiz {index}")
+        saved = ControlPlane(self.plane.store_path).snapshot()["vm_alerts"][0]
+        self.assertEqual(len(saved["reviews"]), 12)
+        self.assertEqual(saved["reviews"][-1]["note"], "Notiz 14")
+
     def test_invalid_port_is_rejected(self):
         with self.assertRaises(ValueError):
             self.plane.create_honeypot("BAD", "HTTP decoy", 70000)

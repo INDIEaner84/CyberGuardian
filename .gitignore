@@ -31,3 +31,8 @@ Thumbs.db
 # Backup
 *.bak
 *~
+
+# Optional VM lab artifacts (never commit disk images or guest secrets)
+lab-data/
+*.qcow2
+*.iso

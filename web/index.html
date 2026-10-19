@@ -6,9 +6,20 @@
   <meta name="theme-color" content="#08090f">
   <meta name="description" content="CyberGuardian — defensives Agenten-Leitpult und simulation-only Honeypot-Labor.">
   <title>CYBERGUARDIAN // CONTROL PLANE</title>
-  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/styles.css?v=7">
 </head>
 <body>
+  <div id="apiAuthGate" class="api-auth-gate is-hidden" role="dialog" aria-modal="true" aria-labelledby="apiAuthTitle">
+    <form id="apiAuthForm" class="api-auth-panel">
+      <span class="eyebrow">CONTROL PLANE / ZUGANG</span>
+      <h2 id="apiAuthTitle">API <span>FREIGEBEN</span></h2>
+      <p>Dieser Leitstand benötigt einen Operator- oder Viewer-Schlüssel. Er bleibt nur bis zum Neuladen dieser Seite im Arbeitsspeicher; keine Speicherung im Browser. Viewer können nur lesen.</p>
+      <label for="apiAuthInput">API- ODER VIEWER-SCHLÜSSEL</label>
+      <input id="apiAuthInput" type="password" autocomplete="off" spellcheck="false" minlength="32" maxlength="128" required placeholder="API-Schlüssel eingeben">
+      <small id="apiAuthMessage" aria-live="polite">Den Schlüssel legt der lokale Server-Operator fest.</small>
+      <button class="button button--primary" type="submit">LEITSTAND ENTSPERREN ↗</button>
+    </form>
+  </div>
   <div class="ambient ambient-grid" aria-hidden="true"></div>
   <div class="ambient ambient-scanlines" aria-hidden="true"></div>
   <div class="ambient ambient-noise" aria-hidden="true"></div>
@@ -87,7 +98,7 @@
           <p class="eyebrow"><span class="eyebrow-line"></span>START MENU / SELECT A PROTOTYPE</p>
           <h2>WIE SOLL SICH<br><span>DEIN LEITSTAND</span> ANFÜHLEN?</h2>
         </div>
-        <p>Sechs Cockpit-Einstiege. Vier Designrichtungen. Ein gemeinsamer Datenkern. Wähle einen Einstieg — du kannst jederzeit im Cockpit wechseln.</p>
+        <p>Sieben Cockpit-Einstiege. Vier Designrichtungen. Ein gemeinsamer Datenkern. Wähle einen Einstieg — du kannst jederzeit im Cockpit wechseln.</p>
       </div>
 
       <div class="prototype-grid">
@@ -132,6 +143,13 @@
           <span class="prototype-card-title">TOOL ATLAS</span>
           <span class="prototype-card-copy">Alle bekannten CyberGuardian-Module in einer nachvollziehbaren Steuerfläche — mit Run-Historie und Safety-Rail.</span>
           <span class="prototype-card-footer"><b>UNIFIED CONTROL</b><i>↗</i></span>
+        </button>
+        <button class="prototype-card" data-enter="vm">
+          <span class="prototype-index">07 / GUEST</span>
+          <span class="prototype-glyph glyph-atlas">▣</span>
+          <span class="prototype-card-title">VM LAB</span>
+          <span class="prototype-card-copy">Eigene isolierte QEMU-VM: feste Testfolgen starten und echte Gast-Sensor-Alerts sehen. Optional.</span>
+          <span class="prototype-card-footer"><b>OPT-IN / LOCAL</b><i>↗</i></span>
         </button>
       </div>
 
@@ -186,8 +204,10 @@
         <span id="viewCrumb" class="topbar-crumb">COMMAND DECK</span>
       </div>
       <div class="topbar-right">
+        <span id="sessionRole" class="session-role" role="status" aria-live="polite">DEMO</span>
         <div class="sync-chip"><span class="status-dot status-dot--green"></span><span>PLANE SYNC</span><b id="syncState">LIVE</b></div>
         <div class="clock"><span id="clockTime">00:00:00</span><small>UTC</small></div>
+        <button id="apiLogout" class="button button--tiny button--ghost is-hidden" type="button">ABMELDEN</button>
         <button id="motionToggle" class="icon-button icon-button--quiet" title="Animationen reduzieren" aria-label="Animationen reduzieren">◌</button>
       </div>
     </header>
@@ -195,23 +215,24 @@
     <div class="app-body">
       <aside class="sidebar">
         <div class="sidebar-top">
-          <p class="side-label">OPERATIONS / 07</p>
+          <p class="side-label">OPERATIONS / 08</p>
           <nav class="main-nav" aria-label="Hauptnavigation">
             <button class="nav-item nav-item--active" data-view="command" title="Startpunkt: Lagebild, Pläne und nächste Schritte"><span class="nav-number">01</span><span class="nav-symbol">◈</span><span>COMMAND DECK</span><b>↗</b></button>
             <button class="nav-item" data-view="mesh" title="Agenten, Handoffs und der gemeinsame Plan-Workflow"><span class="nav-number">02</span><span class="nav-symbol">✣</span><span>AGENT MESH</span><b>↗</b></button>
             <button class="nav-item" data-view="lab" title="Virtuelle Honeypots und synthetische Testsignale"><span class="nav-number">03</span><span class="nav-symbol">⌁</span><span>HONEYPOT LAB</span><b>↗</b></button>
-            <button class="nav-item" data-view="ops" title="Wireshark-ähnliche Metadaten, Proxychains-Check und MAC-Vorschau"><span class="nav-number">04</span><span class="nav-symbol">⌘</span><span>DEFENSE OPS</span><b>↗</b></button>
-            <button class="nav-item" data-view="tools" title="Alle CyberGuardian-Module zentral steuern, testen und auditieren"><span class="nav-number">05</span><span class="nav-symbol">▦</span><span>TOOL ATLAS</span><b>↗</b></button>
-            <button class="nav-item" data-view="drift" title="Visuelle Systemtemperatur: Muster statt Tabellen"><span class="nav-number">06</span><span class="nav-symbol">⟡</span><span>SIGNAL DRIFT</span><b>↗</b></button>
-            <button class="nav-item" data-view="about" title="Projektverständnis, Architektur und Sicherheitsleitplanken"><span class="nav-number">07</span><span class="nav-symbol">?</span><span>PROJECT BRIEF</span><b>↗</b></button>
+            <button class="nav-item" data-view="vm" title="Optionale echte QEMU-VM: feste Tests und Sensor-Alerts"><span class="nav-number">04</span><span class="nav-symbol">▣</span><span>VM LAB</span><b>↗</b></button>
+            <button class="nav-item" data-view="ops" title="Wireshark-ähnliche Metadaten, Proxychains-Check und MAC-Vorschau"><span class="nav-number">05</span><span class="nav-symbol">⌘</span><span>DEFENSE OPS</span><b>↗</b></button>
+            <button class="nav-item" data-view="tools" title="Alle CyberGuardian-Module zentral steuern, testen und auditieren"><span class="nav-number">06</span><span class="nav-symbol">▦</span><span>TOOL ATLAS</span><b>↗</b></button>
+            <button class="nav-item" data-view="drift" title="Visuelle Systemtemperatur: Muster statt Tabellen"><span class="nav-number">07</span><span class="nav-symbol">⟡</span><span>SIGNAL DRIFT</span><b>↗</b></button>
+            <button class="nav-item" data-view="about" title="Projektverständnis, Architektur und Sicherheitsleitplanken"><span class="nav-number">08</span><span class="nav-symbol">?</span><span>PROJECT BRIEF</span><b>↗</b></button>
           </nav>
         </div>
         <div class="sidebar-bottom">
           <div class="safe-card">
             <div class="safe-card-top"><span class="status-dot status-dot--green"></span><span>SAFETY RAIL</span><strong>ON</strong></div>
-            <p>Simulation-only mode aktiv. Browser-Aktionen schreiben nur in die lokale Control Plane.</p>
+            <p>Virtuelle Honeypots sind simuliert. Das optionale VM-Lab sendet nur feste Test-Requests an die eigene isolierte VM.</p>
             <div class="safe-meter"><i style="width: 100%"></i></div>
-            <span class="safe-card-foot">NO ATTACK PATHS EXPOSED</span>
+            <span class="safe-card-foot">FIXED LOCAL VM TESTS ONLY</span>
           </div>
           <div class="sidebar-footline"><span>NODE 7F-A</span><span>v0.3.0</span></div>
         </div>
@@ -310,6 +331,28 @@
           <section class="panel signal-log-panel"><div class="panel-heading"><div><p class="panel-kicker">CAPTURED TELEMETRY / SYNTHETIC</p><h2>SIGNAL LOG</h2></div><div class="log-actions"><span class="panel-code" id="signalLogCount">0 EVENTS</span><button class="button button--tiny button--ghost" id="simulateRandomSignal">＋ TESTSIGNAL EINSPEISEN</button></div></div><div id="signalTable" class="signal-table"></div></section>
         </section>
 
+        <section class="view-panel" data-view-panel="vm">
+          <div class="view-heading view-heading--compact"><div><p class="eyebrow"><span class="eyebrow-line"></span>ISOLATED GUEST / OPT-IN</p><h1>VM <span>LAB</span></h1><p class="heading-copy">Feste HTTP-Tests gegen den eigenen QEMU-Gast. Der Sensor läuft in der VM; nur seine gemeldeten Alerts gelten hier als live erkannt.</p></div><div class="heading-actions"><button class="button button--ghost" id="vmRefresh">↻ SENSOR PRÜFEN</button></div></div>
+          <div class="vm-layout">
+            <section class="panel vm-panel"><div class="panel-heading"><div><p class="panel-kicker">GUEST SENSOR / LIVE STATUS</p><h2>ISOLIERTE TEST-VM</h2></div><span id="vmBadge" class="tag">OFFLINE</span></div><div class="vm-content"><p id="vmStatusText">Verbindung wird geprüft …</p><p class="vm-note">Die VM wird separat mit QEMU und einem lokal bereitgestellten Cloud-Image gestartet. Ohne VM keine Live-Erkennung. Gast-Internet gesperrt, Host-Weiterleitung nur auf 127.0.0.1:18081.</p><label class="vm-token-label" for="vmOperatorToken">OPERATOR-SCHLÜSSEL FÜR VM-TESTS</label><input id="vmOperatorToken" class="vm-token-input" type="password" autocomplete="off" spellcheck="false" placeholder="Nur für diesen Tab im Speicher – nicht gespeichert"><p class="vm-note">Im Server als CYBERGUARDIAN_VM_OPERATOR_TOKEN gesetzt. Der Schlüssel wird nur beim Test-Request gesendet und nicht im Browser gespeichert.</p><div id="vmScenarios" class="vm-scenarios"></div><p id="vmRunResult" class="vm-note" aria-live="polite">Noch kein VM-Test gestartet.</p></div></section>
+            <section class="panel vm-panel"><div class="panel-heading"><div><p class="panel-kicker">OBSERVED IN GUEST / NOT SYNTHETIC</p><h2>VM-ALERTS</h2></div><span id="vmAlertCount" class="panel-code">0</span></div><div id="vmAlerts" class="vm-alerts" aria-live="polite"></div></section>
+          </div>
+          <section class="panel vm-panel vm-replay"><div class="panel-heading"><div><p class="panel-kicker">OFFLINE / FIXED RULES</p><h2>DETECTION REPLAY</h2></div><span class="tag">REPLAY · NICHT LIVE</span></div>
+            <div class="vm-content"><p class="vm-note">Bereits gespeicherte VM-Alerts und synthetische Honeypot-Logs mit vier festen Regeln neu einordnen. Kein Dateiupload, keine frei definierbaren Muster, kein neuer Angriff und keine automatische Gegenmaßnahme.</p>
+              <form id="replayForm" class="vm-replay-form"><label>QUELLE<select id="replaySource"><option value="all">BEIDE (GETRENNT MARKIERT)</option><option value="vm">NUR VM-ALERTS</option><option value="honeypot">NUR SIMULIERTE HONEYPOTS</option></select></label><label>MAX. ZEILEN JE QUELLE<select id="replayLimit"><option value="20">20</option><option value="40" selected>40</option><option value="100">100</option></select></label><button id="replayRun" class="button button--primary" type="submit">REGEL-REPLAY STARTEN ↗</button></form>
+              <div id="replayRules" class="vm-replay-rules"><span class="vm-note">Regelkatalog wird geladen …</span></div>
+              <div id="replayResult" class="vm-replay-result" aria-live="polite"><p class="vm-note">Noch kein Replay durchgeführt. Treffer erzeugen keine neuen VM-Alerts oder Incidents.</p></div>
+            </div>
+          </section>
+          <section class="panel vm-panel vm-import"><div class="panel-heading"><div><p class="panel-kicker">OFFLINE FILE / SELECTED METADATA ONLY</p><h2>ZEEK / SURICATA IMPORT</h2></div><span id="importedCount" class="tag">0 UNVERIFIZIERT</span></div>
+            <div class="vm-content"><p class="vm-note">Nur lokale JSON-Zeilen aus Zeek notice.log oder Suricata eve.json mit Alert-Einträgen. Höchstens 48 KiB, 100 Zeilen und 50 Alerts je Import. Der Dateiname wird nicht übertragen. Der Dateiinhalt wird zur Prüfung an den lokalen Server gesendet; Rohzeilen, Nachrichten und Payloads werden dort nicht gespeichert. Nur ausgewählte Metadaten bleiben lokal. Importierte Daten sind <strong>unverifiziert und nicht live</strong>.</p>
+              <form id="offlineImportForm" class="vm-import-form"><label>FORMAT<select id="offlineImportFormat"><option value="suricata-eve">SURICATA EVE / ALERT</option><option value="zeek-notice">ZEEK NOTICE / JSONL</option></select></label><label>LOKALE JSONL-DATEI<input id="offlineImportFile" type="file" accept=".jsonl,.ndjson,.json,.log" required></label><button id="offlineImportRun" class="button button--primary" type="submit">METADATEN IMPORTIEREN ↗</button></form>
+              <p id="offlineImportResult" class="vm-note" aria-live="polite">Keine Datei importiert. Es wird kein Collector installiert oder gestartet.</p><div id="importedAlerts" class="vm-alerts vm-import-list"></div>
+            </div>
+          </section>
+          <section class="panel vm-panel vm-evidence"><div class="panel-heading"><div><p class="panel-kicker">LOCAL EVIDENCE FINDER / OFFLINE</p><h2>DATEN FINDEN</h2></div><span class="tag tag--green">KEINE EXTERNE SUCHE</span></div><div class="vm-content"><p class="vm-note">Suche in lokalen Plänen, VM-Alerts und Honeypot-Incidents. CSV-Export für eigene Graph-/Analysewerkzeuge; keine Maltego-Installation und kein Internet-OSINT aus dem Browser.</p><div class="vm-search"><input id="vmEvidenceSearch" type="search" placeholder="Regel, Quelle oder Plan suchen" aria-label="Lokale Evidenz suchen"><button id="vmEvidenceExport" class="button button--ghost" type="button">CSV EXPORT ↓</button></div><div id="vmEvidenceResults" class="vm-alerts"></div></div></section>
+        </section>
+
         <section class="view-panel" data-view-panel="ops">
           <div class="view-heading view-heading--compact"><div><p class="eyebrow"><span class="eyebrow-line"></span>DEFENSIVE TOOLCHAIN / LOCAL OPERATOR</p><h1>DEFENSE <span>OPS</span></h1><p class="heading-copy">Nützliche Beobachtung automatisieren — mit festen Grenzen statt einem offenen Command Runner.</p></div><div class="heading-actions"><button class="button button--ghost" id="opsRefresh">↻ CAPABILITIES AKTUALISIEREN</button><button class="button button--primary" data-view-link="lab">HONEYPOT LAB ↗</button></div></div>
           <div class="explain-strip explain-strip--ops"><span class="explain-strip-icon">⌘</span><div><strong>WAS HIER AUTOMATISIERT WIRD</strong><p>Lokale Werkzeuge werden erkannt und sicher eingebunden: Paket-Header ansehen wie in Wireshark, Proxychains nur prüfen und MAC-Rotation nur vorbereiten. Keine beliebigen Shell-Befehle, keine Netzwerk-Mutation aus dem Browser.</p></div><span class="explain-strip-rule">ALLOWLIST / BOUNDED / READ ONLY</span></div>
@@ -401,6 +444,6 @@
   </div>
 
   <div id="confirmToast" class="sr-only" aria-live="assertive"></div>
-  <script src="/app.js" defer></script>
+  <script src="/app.js?v=7" defer></script>
 </body>
 </html>

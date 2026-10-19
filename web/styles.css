@@ -61,6 +61,12 @@ a { color: inherit; }
 .signal-canvas { position: fixed; inset: 0; width: 100%; height: 100%; opacity: .28; pointer-events: none; z-index: -1; }
 
 .is-hidden { display: none !important; }
+.session-role { color: var(--cyan); border: 1px solid var(--line-strong); padding: 7px 9px; font: 700 10px var(--mono); white-space: nowrap; }
+.viewer-mode .session-role { color: var(--yellow); border-color: var(--yellow); }
+/* Viewer controls stay navigable/searchable, but all server-writing actions are hidden.
+   Authorization on the server is the actual security boundary. */
+.viewer-mode :is([data-open-modal], [data-toggle-pot], [data-simulate-pot], [data-ack-incident], [data-run-tool], [data-toggle-tool], [data-vm-scenario], .vm-review-form, #simulateRandomSignal, #driftPulse, #runCapture, #proxyCheck, #macPreview, #opsSweep, #runToolSweep, #replayForm, #offlineImportForm, #vmOperatorToken, .vm-token-label, #vmRunResult) { display: none !important; }
+
 body.prototype-open { overflow: hidden; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 .mono { font-family: var(--mono); letter-spacing: .06em; }
@@ -1164,3 +1170,67 @@ body.prototype-open { overflow: hidden; }
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .001ms !important; }
 }
 body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after { animation-play-state: paused !important; transition: none !important; }
+
+/* Optional QEMU guest lab — deliberately distinct from synthetic honeypots. */
+.vm-layout { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 14px; margin-top: 18px; }
+.vm-panel { margin-bottom: 14px; }
+.vm-content, .vm-alerts { padding: 18px; }
+.vm-content > p:first-child { margin-top: 0; color: var(--text); font-size: 17px; }
+.vm-note { color: var(--muted); font: 11px/1.6 var(--mono); letter-spacing: 0; }
+.vm-scenarios { margin-top: 20px; border-top: 1px solid var(--line); }
+.vm-scenario, .vm-alert { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.vm-scenario strong, .vm-alert strong { display: block; font: 700 15px var(--display); }
+.vm-scenario small, .vm-alert small { display: block; margin-top: 4px; color: var(--muted); font: 10px/1.5 var(--mono); }
+.vm-scenario .button { flex: none; }
+.vm-scenario .button:disabled { opacity: .45; cursor: not-allowed; }
+.vm-alert { align-items: flex-start; justify-content: flex-start; overflow-wrap: anywhere; }
+.vm-alert .tag { flex: none; }
+.vm-alert p { margin: 5px 0; color: var(--text); font-size: 13px; }
+.vm-search { display: flex; gap: 10px; margin-top: 14px; }
+.vm-search input { flex: 1; min-width: 0; padding: 11px 13px; border: 1px solid var(--line); background: var(--panel-deep); color: var(--text); }
+.vm-evidence .vm-alerts { padding: 0; max-height: 390px; overflow: auto; }
+.vm-evidence .vm-alert { padding: 12px 18px; }
+@media (max-width: 900px) { .vm-layout { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .vm-scenario, .vm-search { flex-direction: column; align-items: stretch; } .vm-alert { flex-wrap: wrap; } }
+.vm-token-label { display: block; margin-top: 18px; color: var(--cyan); font: 700 10px/1.5 var(--mono); letter-spacing: .12em; }
+.vm-token-input { width: 100%; margin-top: 7px; padding: 11px 13px; border: 1px solid var(--line); background: var(--panel-deep); color: var(--text); font: 12px var(--mono); }
+
+/* Optional API gate: no persisted browser token, blocks the entire cockpit. */
+.api-auth-gate { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 18px; background: rgba(3, 6, 11, .94); backdrop-filter: blur(12px); }
+.api-auth-panel { width: min(100%, 460px); display: grid; gap: 14px; padding: 32px; border: 1px solid var(--line-strong); background: var(--panel-deep); box-shadow: 0 20px 90px rgba(0,0,0,.65); }
+.api-auth-panel h2 { margin: 0; font: 700 46px/1 var(--display); }
+.api-auth-panel h2 span { color: var(--cyan); }
+.api-auth-panel p, .api-auth-panel small { margin: 0; color: var(--muted); font: 11px/1.6 var(--mono); }
+.api-auth-panel label { color: var(--cyan); font: 700 10px var(--mono); }
+.api-auth-panel input { width: 100%; padding: 12px; border: 1px solid var(--line); background: var(--ink); color: var(--text); font: 12px var(--mono); }
+.api-auth-panel .button { justify-self: start; }
+@media (max-width: 560px) { .api-auth-panel { padding: 22px; } .api-auth-panel h2 { font-size: 38px; } }
+.vm-alert-body { min-width: 0; flex: 1; }
+.vm-review-history { margin-top: 10px; border-top: 1px solid var(--line); }
+.vm-review-entry { padding: 7px 0; }
+.vm-review-entry p { margin: 2px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.vm-review-form { display: flex; gap: 7px; margin-top: 10px; }
+.vm-review-form input { flex: 1; min-width: 0; padding: 9px; border: 1px solid var(--line); background: var(--ink); color: var(--text); font: 11px var(--mono); }
+.vm-review-form button { flex: none; }
+@media (max-width: 560px) { .vm-review-form { flex-direction: column; } }
+
+.vm-replay-form { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; margin: 18px 0; }
+.vm-replay-form label { display: grid; gap: 6px; color: var(--cyan); font: 700 10px var(--mono); }
+.vm-replay-form select { min-width: 155px; padding: 10px; border: 1px solid var(--line); background: var(--ink); color: var(--text); font: 11px var(--mono); }
+.vm-replay-form button { min-height: 38px; }
+.vm-replay-form button:disabled { opacity: .55; cursor: wait; }
+.vm-replay-rules { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+.vm-replay-rules span { display: inline-block; padding: 7px 9px; border: 1px solid var(--line); color: var(--muted); font: 10px var(--mono); }
+.vm-replay-result { max-height: 420px; overflow: auto; border-top: 1px solid var(--line); }
+.vm-replay-head { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin: 14px 0; font: 11px var(--mono); }
+.vm-replay-head strong { color: var(--cyan); }
+.vm-replay-result .vm-alert { padding: 10px 0; }
+@media (max-width: 560px) { .vm-replay-form, .vm-replay-form label, .vm-replay-form button { width: 100%; } }
+
+.vm-import-form { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; margin: 18px 0; }
+.vm-import-form label { display: grid; gap: 6px; min-width: 170px; color: var(--cyan); font: 700 10px var(--mono); }
+.vm-import-form input, .vm-import-form select { max-width: 100%; padding: 9px; border: 1px solid var(--line); background: var(--ink); color: var(--text); font: 11px var(--mono); }
+.vm-import-form button:disabled { opacity: .55; cursor: wait; }
+.vm-import-list { padding: 0; max-height: 330px; overflow: auto; }
+.vm-import-list .vm-alert { padding: 10px 0; }
+@media (max-width: 560px) { .vm-import-form, .vm-import-form label, .vm-import-form button { width: 100%; } }
