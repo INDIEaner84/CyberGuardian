@@ -7,12 +7,18 @@
   const motionPreferred = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let state = null;
   let opsState = null;
+  let vmState = null;
+  let vmBusy = false;
+  let replayRules = null;
   let toolsState = null;
   let currentView = 'command';
   let planFilter = 'all';
   let toolFilter = 'all';
   let toolSearch = '';
   let offlineMode = false;
+  let apiAuthRequired = false;
+  let apiToken = '';
+  let sessionRole = null;
   let toastTimer;
   let backgroundFrame;
   let driftFrame;
@@ -155,6 +161,11 @@
       text: 'Hier baust du virtuelle Decoys für sichere Übungen. Erst anlegen, dann aktivieren, dann ein synthetisches Signal testen.',
       next: 'DECOY ERSTELLEN', output: 'kein Port · keine Antwort · kein Angriff', action: 'honeypot', actionLabel: 'DECOY ANLEGEN'
     },
+    vm: {
+      symbol: '▣', kicker: 'YOU ARE HERE / ISOLATED GUEST', title: 'VM LAB',
+      text: 'Hier prüfst du den Gast-Sensor und startest nur feste Tests gegen die eigene VM. Ohne Verbindung gibt es keine Live-Alerts.',
+      next: 'SENSOR PRÜFEN', output: 'echte Gast-Beobachtung · kein freies Ziel', action: 'vm', actionLabel: 'VM LAB ÖFFNEN'
+    },
     ops: {
       symbol: '⌘', kicker: 'YOU ARE HERE / LOCAL TOOLCHAIN', title: 'DEFENSE OPS',
       text: 'Hier werden nützliche lokale Tools sicher begrenzt: Capture-Header beobachten, Proxychains prüfen, MAC-Wechsel vorbereiten.',
@@ -190,16 +201,42 @@
     action.dataset.guideAction = guide.action;
   }
 
+  function showAuthGate(message = '') {
+    apiAuthRequired = true;
+    apiToken = '';
+    sessionRole = null;
+    document.body.classList.remove('viewer-mode');
+    $('#sessionRole').textContent = 'GESPERRT';
+    $('#apiAuthGate').classList.remove('is-hidden');
+    $('#apiAuthMessage').textContent = message || 'Den Schlüssel legt der lokale Server-Operator fest.';
+    $('#apiLogout').classList.add('is-hidden');
+    $('#apiAuthInput').focus();
+  }
+
+  function setSessionRole(role) {
+    sessionRole = role;
+    document.body.classList.toggle('viewer-mode', role === 'viewer');
+    $('#sessionRole').textContent = role === 'viewer' ? 'VIEWER · NUR LESEN' : role === 'operator' ? 'OPERATOR' : 'DEMO';
+  }
+
   async function request(path, options = {}) {
+    if (sessionRole === 'viewer' && !['GET', 'HEAD'].includes((options.method || 'GET').toUpperCase())) {
+      throw new Error('Lesezugang: Änderungen sind nicht erlaubt.');
+    }
+    const { headers: extraHeaders = {}, ...rest } = options;
     const response = await fetch(path, {
-      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-      ...options
+      ...rest,
+      headers: { 'Content-Type': 'application/json', ...(apiToken && path !== '/api/auth' ? { Authorization: `Bearer ${apiToken}` } : {}), ...extraHeaders }
     });
     let payload = {};
     try { payload = await response.json(); } catch (_) { /* empty response */ }
-    if (!response.ok) throw new Error(payload.error || `HTTP ${response.status}`);
+    if (!response.ok) {
+      if (response.status === 401 && payload.code === 'api_auth_required') showAuthGate('API-Schlüssel fehlt oder ist ungültig. Bitte erneut eingeben.');
+      throw new Error(payload.error || `HTTP ${response.status}`);
+    }
     return payload;
   }
+
 
   async function loadState(showError = false) {
     try {
@@ -210,6 +247,7 @@
       renderAll();
       return true;
     } catch (error) {
+      if (apiAuthRequired && !apiToken) return false;
       if (!state) state = clone(fallbackState);
       offlineMode = true;
       if ($('#syncState')) $('#syncState').textContent = 'LOCAL DEMO';
@@ -434,10 +472,179 @@
     renderActivity();
     renderMesh();
     renderLab();
+    renderVM();
+    renderImported();
     if (opsState) renderOps();
     if (toolsState) renderTools();
     renderDriftReadouts();
     $('#lastSync').textContent = formatTime(state.updated_at, true);
+  }
+
+  async function loadVM() {
+    if (vmBusy) return;
+    vmBusy = true;
+    try {
+      vmState = await request('/api/vm-lab');
+      await loadState(false); // status polling imports newly observed guest events
+    } catch (_) {
+      vmState = { connected: false, message: 'Server nicht erreichbar — keine Live-Erkennung.', scenarios: [] };
+    } finally {
+      vmBusy = false;
+      renderVM();
+    }
+  }
+
+  async function runVMScenario(id) {
+    if (!vmState?.connected || vmBusy) return;
+    const operatorToken = $('#vmOperatorToken').value;
+    if (operatorToken.length < 32 || operatorToken.length > 128) {
+      toast('Operator-Schlüssel mit 32–128 Zeichen eingeben.', 'error');
+      return;
+    }
+    vmBusy = true;
+    renderVM();
+    try {
+      const result = await request(`/api/vm-lab/scenarios/${encodeURIComponent(id)}/run`, {
+        method: 'POST', headers: { 'X-VM-Operator-Token': operatorToken }, body: '{}'
+      });
+      $('#vmRunResult').textContent = `${result.requests} Requests in der eigenen VM beobachtet · ${result.alerts.length} Sensor-Alert(s). Run ${result.run_id.slice(0, 8)}.`;
+      await loadState(false);
+      toast('VM-Test beendet; Gast-Alerts aktualisiert.', 'success');
+    } catch (error) {
+      $('#vmRunResult').textContent = `Nicht ausgeführt: ${error.message}`;
+      toast(error.message, 'error');
+    } finally {
+      vmBusy = false;
+      renderVM();
+    }
+  }
+
+  async function loadReplayRules() {
+    if (replayRules) return;
+    try {
+      const data = await request('/api/detection/rules');
+      replayRules = Array.isArray(data.rules) ? data.rules : [];
+      $('#replayRules').innerHTML = replayRules.map((rule) => `<span title="${escapeHTML(rule.condition)}">${escapeHTML(rule.id)} · ${escapeHTML(rule.title)} · ${escapeHTML(rule.source)}</span>`).join('') || '<span>Keine Regeln verfügbar.</span>';
+    } catch (_) {
+      $('#replayRules').textContent = 'Regelkatalog nicht erreichbar.';
+    }
+  }
+
+  function renderReplay(result) {
+    const target = $('#replayResult');
+    if (!result) return;
+    const rows = (result.matches || []).map((match) => `<article class="vm-alert"><span class="tag ${match.simulated ? '' : 'tag--green'}">${match.simulated ? 'SIMULIERT' : 'VM BEOBACHTET'}</span><div class="vm-alert-body"><strong>${escapeHTML(match.rule_id)} · ${escapeHTML(match.title)}</strong><p>${escapeHTML(match.explanation)}</p><small>EVENT ${escapeHTML(match.event_id)}${match.run_id ? ` · RUN ${escapeHTML(match.run_id)}` : ''} · REPLAY, KEIN NEUER ALERT</small></div></article>`).join('');
+    target.innerHTML = `<div class="vm-replay-head"><strong>OFFLINE REPLAY</strong><span>${escapeHTML(result.evaluated)} geprüft · ${escapeHTML(result.match_count)} Treffer${result.truncated ? ' · AUF LIMIT BEGRENZT' : ''}</span></div>${rows || '<p class="vm-note">Keine Regel-Treffer im ausgewählten Ausschnitt. Das ist keine Aussage über andere Ereignisse.</p>'}`;
+  }
+
+  async function runReplay(event) {
+    event.preventDefault();
+    if (offlineMode) { toast('Control Plane nicht erreichbar — kein Replay ausgeführt.', 'error'); return; }
+    const button = $('#replayRun');
+    button.disabled = true;
+    button.textContent = 'REPLAY LÄUFT …';
+    try {
+      const result = await request('/api/detection/replay', { method: 'POST', body: JSON.stringify({
+        source: $('#replaySource').value, limit: Number($('#replayLimit').value)
+      }) });
+      renderReplay(result);
+      await loadState(false);
+      toast(`${result.match_count} Offline-Regel-Treffer, keine Live-Alerts erzeugt.`, 'success');
+    } catch (error) {
+      $('#replayResult').textContent = `Replay nicht möglich: ${error.message}`;
+      toast(error.message, 'error');
+    } finally {
+      button.disabled = false;
+      button.textContent = 'REGEL-REPLAY STARTEN ↗';
+    }
+  }
+
+  function renderVM() {
+    if (!$('#vmBadge')) return;
+    const connected = Boolean(vmState?.connected);
+    $('#vmBadge').textContent = connected ? 'VM LIVE' : 'VM OFFLINE';
+    $('#vmBadge').className = `tag ${connected ? 'tag--green' : ''}`;
+    $('#vmStatusText').textContent = vmState?.message || 'VM-Verbindung noch nicht geprüft.';
+    $('#vmScenarios').innerHTML = (vmState?.scenarios || []).map((scenario) => `
+      <div class="vm-scenario"><div><strong>${escapeHTML(scenario.title)}</strong><small>${escapeHTML(scenario.description)}</small></div>
+      <button class="button button--tiny button--ghost" data-vm-scenario="${escapeHTML(scenario.id)}" ${connected && !vmBusy && ($('#vmOperatorToken')?.value.length || 0) >= 32 ? '' : 'disabled'}>TEST STARTEN ↗</button></div>`).join('') || '<p class="vm-note">Szenarien erscheinen, sobald der Server erreichbar ist.</p>';
+    const alerts = state?.vm_alerts || [];
+    const open = alerts.filter((alert) => (alert.status || 'open') === 'open').length;
+    $('#vmAlertCount').textContent = `${open} OPEN / ${alerts.length} TOTAL`;
+    const editingReview = $('#vmAlerts').contains(document.activeElement) && document.activeElement.matches('.vm-review-form input');
+    if (!editingReview) $('#vmAlerts').innerHTML = alerts.length ? alerts.slice(0, 30).map((alert) => {
+      const acknowledged = alert.status === 'acknowledged';
+      const reviews = (alert.reviews || []).slice(-3).map((review) => `<div class="vm-review-entry"><small>${escapeHTML(review.action)} · ${escapeHTML(review.actor)} · ${escapeHTML(review.created_at)}</small>${review.note ? `<p>${escapeHTML(review.note)}</p>` : ''}</div>`).join('');
+      return `<article class="vm-alert"><span class="tag ${alert.severity === 'high' ? 'tag--high' : ''}">${escapeHTML(alert.severity)}</span>
+      <div class="vm-alert-body"><strong>${escapeHTML(alert.rule)} · ${acknowledged ? 'QUITTIERT' : 'OFFEN'}</strong><p>${escapeHTML(alert.summary)}</p><small>${escapeHTML(alert.observed_at)} · ${escapeHTML(alert.source)} · Run ${escapeHTML(alert.run_id || '—')}</small>
+      <div class="vm-review-history">${reviews}</div><form class="vm-review-form" data-vm-review="${escapeHTML(alert.id)}"><input name="note" maxlength="240" ${acknowledged ? 'required' : ''} placeholder="${acknowledged ? 'Weitere Notiz (Pflicht)' : 'Optionale Notiz (max. 240 Zeichen)'}" aria-label="Notiz zu VM-Alert"><button type="submit" class="button button--tiny button--ghost">${acknowledged ? 'NOTIZ SPEICHERN' : 'QUITTIEREN'}</button></form></div></article>`;
+    }).join('') : '<p class="vm-note">Noch keine echten VM-Alerts. Synthetische Honeypot-Signale werden hier nicht angezeigt.</p>';
+    renderEvidence();
+  }
+
+  function renderImported() {
+    const entries = state?.imported_alerts || [];
+    $('#importedCount').textContent = `${entries.length} UNVERIFIZIERT`;
+    $('#importedAlerts').innerHTML = entries.length ? entries.slice(0, 20).map((entry) => `<article class="vm-alert"><span class="tag">OFFLINE / UNVERIFIZIERT</span><div class="vm-alert-body"><strong>${escapeHTML(entry.signature)}</strong><p>${escapeHTML(entry.source_ip)} → ${escapeHTML(entry.destination_ip)} · ${escapeHTML(entry.severity)}</p><small>${escapeHTML(entry.format)} · ${escapeHTML(entry.sensor_timestamp)} · ${escapeHTML(entry.id)} · NICHT LIVE</small></div></article>`).join('') : '<p class="vm-note">Noch keine importierten Metadaten.</p>';
+  }
+
+  async function runOfflineImport(event) {
+    event.preventDefault();
+    if (offlineMode) { toast('Control Plane nicht erreichbar — kein Import ausgeführt.', 'error'); return; }
+    const file = $('#offlineImportFile').files?.[0];
+    if (!file || !file.size || file.size > 48 * 1024) {
+      toast('Datei muss zwischen 1 Byte und 48 KiB groß sein.', 'error'); return;
+    }
+    const button = $('#offlineImportRun');
+    button.disabled = true;
+    button.textContent = 'DATEI WIRD GEPRÜFT …';
+    try {
+      const content = new TextDecoder('utf-8', { fatal: true }).decode(await file.arrayBuffer());
+      const result = await request('/api/evidence/import', { method: 'POST', body: JSON.stringify({
+        format: $('#offlineImportFormat').value, content
+      }) });
+      $('#offlineImportResult').textContent = `${result.accepted} neue Metadaten · ${result.duplicates} Duplikate · ${result.ignored_unrelated} andere Zeilen ignoriert. Offline / unverifiziert / nicht live.`;
+      $('#offlineImportFile').value = '';
+      await loadState(false);
+      toast('Lokale Alert-Metadaten importiert; keine Live-Erkennung.', 'success');
+    } catch (error) {
+      $('#offlineImportResult').textContent = `Import abgelehnt: ${error.message}`;
+      toast(error.message, 'error');
+    } finally {
+      button.disabled = false;
+      button.textContent = 'METADATEN IMPORTIEREN ↗';
+    }
+  }
+
+  function evidenceRows() {
+    const rows = [
+      ...(state?.vm_alerts || []).map((item) => ({ type: 'VM-Alert', id: item.id, detail: `${item.rule} · ${item.summary} · Run ${item.run_id} · ${item.status || 'open'} · ${(item.reviews || []).map((review) => review.note).filter(Boolean).join(' / ')}`, time: item.observed_at })),
+      ...(state?.imported_alerts || []).map((item) => ({ type: 'Offline-Import (unverifiziert)', id: item.id, detail: `${item.format} · ${item.signature} · ${item.source_ip} → ${item.destination_ip} · NICHT LIVE`, time: item.sensor_timestamp })),
+      ...(state?.incidents || []).map((item) => ({ type: 'Honeypot (simuliert)', id: item.id, detail: `${item.tactic} · ${item.source}`, time: item.created_at })),
+      ...(state?.plans || []).map((item) => ({ type: 'Plan', id: item.id, detail: `${item.title} · ${item.objective}`, time: item.created_at }))
+    ];
+    const query = ($('#vmEvidenceSearch')?.value || '').trim().toLocaleLowerCase();
+    return rows.filter((row) => Object.values(row).some((value) => String(value || '').toLocaleLowerCase().includes(query)));
+  }
+
+  function renderEvidence() {
+    if (!$('#vmEvidenceResults')) return;
+    const rows = evidenceRows();
+    $('#vmEvidenceResults').innerHTML = rows.length ? rows.slice(0, 40).map((row) => `
+      <article class="vm-alert"><span class="tag">${escapeHTML(row.type)}</span><div><strong>${escapeHTML(row.id)}</strong><p>${escapeHTML(row.detail)}</p><small>${escapeHTML(row.time)}</small></div></article>`).join('') : '<p class="vm-note">Keine lokalen Treffer.</p>';
+  }
+
+  function exportEvidence() {
+    const cell = (value) => {
+      let text = String(value ?? '').replace(/[\r\n\t]/g, ' ');
+      if (/^\s*[=+@-]/.test(text)) text = `'${text}`; // spreadsheet formula safety
+      return `"${text.replaceAll('"', '""')}"`;
+    };
+    const csv = [['Typ', 'ID', 'Detail', 'Zeit'], ...evidenceRows().map((row) => [row.type, row.id, row.detail, row.time])]
+      .map((row) => row.map(cell).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob(['\ufeff', csv], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a'); link.href = url; link.download = 'cyberguardian-evidenz.csv'; link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   function renderMetrics() {
@@ -765,12 +972,13 @@
   }
 
   function setView(view) {
-    const allowed = ['command', 'mesh', 'lab', 'ops', 'tools', 'drift', 'about'];
+    const allowed = ['command', 'mesh', 'lab', 'vm', 'ops', 'tools', 'drift', 'about'];
     currentView = allowed.includes(view) ? view : 'command';
     $$('.view-panel').forEach((panel) => panel.classList.toggle('view-panel--active', panel.dataset.viewPanel === currentView));
     $$('.nav-item').forEach((button) => button.classList.toggle('nav-item--active', button.dataset.view === currentView));
-    $('#viewCrumb').textContent = ({ command: 'COMMAND DECK', mesh: 'AGENT MESH', lab: 'HONEYPOT LAB', ops: 'DEFENSE OPS', tools: 'TOOL ATLAS', drift: 'SIGNAL DRIFT', about: 'PROJECT BRIEF' })[currentView];
+    $('#viewCrumb').textContent = ({ command: 'COMMAND DECK', mesh: 'AGENT MESH', lab: 'HONEYPOT LAB', vm: 'VM LAB', ops: 'DEFENSE OPS', tools: 'TOOL ATLAS', drift: 'SIGNAL DRIFT', about: 'PROJECT BRIEF' })[currentView];
     renderTabGuide(currentView);
+    if (currentView === 'vm') { loadVM(); loadReplayRules(); }
     if (currentView === 'ops') loadOpsOverview(false);
     if (currentView === 'tools') loadTools(false);
     if (currentView === 'drift') startDriftCanvas();
@@ -1060,7 +1268,7 @@
       if (['plan', 'honeypot', 'message', 'agent'].includes(action)) openModal(action);
       else if (action === 'ops-sweep') runSweep();
       else if (action === 'tools-sweep') runToolSweep();
-      else if (['command', 'mesh', 'lab', 'ops', 'tools', 'drift', 'about'].includes(action)) setView(action);
+      else if (['command', 'mesh', 'lab', 'vm', 'ops', 'tools', 'drift', 'about'].includes(action)) setView(action);
     });
     $$('[data-close-modal]').forEach((button) => button.addEventListener('click', closeModal));
     $('#modalBackdrop')?.addEventListener('click', (event) => { if (event.target === $('#modalBackdrop')) closeModal(); });
@@ -1084,6 +1292,46 @@
       if (pot) { simulateSignal(pot.id); setView('drift'); } else toast('Signal Pulse benötigt einen aktiven virtuellen Decoy.', 'error');
     });
     $('#motionToggle')?.addEventListener('click', () => { document.body.classList.toggle('reduce-motion'); toast(document.body.classList.contains('reduce-motion') ? 'Animationen pausiert.' : 'Animationen aktiviert.'); });
+    $('#apiAuthForm')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      apiToken = $('#apiAuthInput').value;
+      try {
+        const session = await request('/api/session');
+        if (!['operator', 'viewer'].includes(session.role)) throw new Error('Unbekannte API-Rolle.');
+        state = await request('/api/state');
+        setSessionRole(session.role);
+        offlineMode = false;
+        $('#syncState').textContent = 'LIVE';
+        renderAll();
+        $('#apiAuthGate').classList.add('is-hidden');
+        $('#apiAuthInput').value = '';
+        $('#apiLogout').classList.remove('is-hidden');
+        toast('Control Plane entsperrt.', 'success');
+      } catch (error) {
+        apiToken = '';
+        $('#apiAuthMessage').textContent = error.message || 'Anmeldung fehlgeschlagen.';
+      }
+    });
+    $('#apiLogout')?.addEventListener('click', () => { apiToken = ''; window.location.reload(); });
+    $('#replayForm')?.addEventListener('submit', runReplay);
+    $('#offlineImportForm')?.addEventListener('submit', runOfflineImport);
+    $('#vmRefresh')?.addEventListener('click', loadVM);
+    $('#vmOperatorToken')?.addEventListener('input', renderVM);
+    $('#vmAlerts')?.addEventListener('submit', async (event) => {
+      const form = event.target.closest('[data-vm-review]');
+      if (!form) return;
+      event.preventDefault();
+      const note = new FormData(form).get('note') || '';
+      form.querySelector('input')?.blur();
+      const okay = await mutate(`/api/vm-alerts/${encodeURIComponent(form.dataset.vmReview)}/review`, 'POST', { note }, 'VM-Alert nachvollziehbar geprüft.');
+      if (okay) renderVM();
+    });
+    $('#vmEvidenceSearch')?.addEventListener('input', renderEvidence);
+    $('#vmEvidenceExport')?.addEventListener('click', exportEvidence);
+    $('#vmScenarios')?.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-vm-scenario]');
+      if (button) runVMScenario(button.dataset.vmScenario);
+    });
     $('#opsRefresh')?.addEventListener('click', () => loadOpsOverview(true));
     $('#runCapture')?.addEventListener('click', runCapture);
     $('#proxyCheck')?.addEventListener('click', checkProxy);
@@ -1118,8 +1366,14 @@
     startPrototypeInteraction();
     startLandingInteraction();
     startBackgroundCanvas();
-    await loadState(true);
-    window.setInterval(() => { if (!document.hidden) loadState(false); }, 8000);
+    try { apiAuthRequired = (await request('/api/auth')).required === true; } catch (_) { /* offline demo */ }
+    if (apiAuthRequired) showAuthGate();
+    else {
+      try { setSessionRole((await request('/api/session')).role); } catch (_) { setSessionRole(null); }
+      await loadState(true);
+    }
+    window.setInterval(() => { if (!document.hidden && (!apiAuthRequired || apiToken)) loadState(false); }, 8000);
+    window.setInterval(() => { if (!document.hidden && currentView === 'vm' && (!apiAuthRequired || apiToken)) loadVM(); }, 3000);
   }
 
   boot();

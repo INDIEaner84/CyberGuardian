@@ -1,0 +1,23 @@
+name: Browser API and VM lab tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stdlib-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Run dependency-free control-plane and VM-boundary tests
+        run: python3 -m unittest discover -s tests -v
+      - name: Check browser JavaScript syntax
+        run: node --check web/app.js
